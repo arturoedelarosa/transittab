@@ -88,10 +88,12 @@ const MODES = [
   {
     id: 'scooter',
     icon: '🛴',
-    name: 'Scooter eléctrico',
+    name: 'Bici / Scooter eléctrico',
     hasCapital: true,
+    // Default de $18,000 es punto medio entre scooter básico (~$10k) y e-bike de entrada (~$25k).
+    // Rango ampliado hasta $150,000 para cubrir e-bikes de calidad y cargo bikes.
     params: {
-      purchasePrice: { label: 'Precio de compra', value: 20000, unit: 'MXN', min: 5000, max: 100000, step: 500, isCurrency: true },
+      purchasePrice: { label: 'Precio de compra', value: 18000, unit: 'MXN', min: 5000, max: 150000, step: 500, isCurrency: true },
       range:         { label: 'Autonomía por carga', value: 50, unit: 'km/carga', min: 20, max: 150, step: 5 },
       chargeCost:    { label: 'Costo por carga', value: 0.80, unit: 'MXN/carga', min: 0.20, max: 5, step: 0.10 },
       maintenance:   { label: 'Mantenimiento anual', value: 1500, unit: 'MXN/año', min: 0, max: 8000, step: 100, isCurrency: true },
@@ -396,6 +398,12 @@ function renderPanels() {
         <div class="oh-result" id="oh-result">—</div>
       </div>` : '';
 
+    const scooterHintHTML = mode.id === 'scooter' ? `
+      <div class="odometer-helper" style="margin-top:12px">
+        <strong>🛴 Scooter eléctrico &nbsp;·&nbsp; ⚡🚲 Bicicleta eléctrica</strong>
+        <p>Este modo cubre ambas categorías. El costo por km es prácticamente idéntico entre las dos — la diferencia real está en el precio de compra. Ajusta ese valor a tu vehículo real: una e-bike de entrada cuesta ~$12,000–$20,000 MXN, una de calidad $30,000–$80,000+.</p>
+      </div>` : '';
+
     panel.innerHTML = `
       <div class="panel-header" data-id="${mode.id}">
         <div class="panel-title">
@@ -410,6 +418,7 @@ function renderPanels() {
       <div class="panel-body" id="body-${mode.id}">
         ${fieldsHTML}
         ${odoHTML}
+        ${scooterHintHTML}
       </div>
     `;
     container.appendChild(panel);
