@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TransitTab — El costo real de moverte</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">Transit<span>Tab</span></div>
+  <div class="header-dot"></div>
+  <div class="tagline">El costo real de moverte en México</div>
+  <div class="country-badge">🇲🇽 MX · 2026</div>
+</header>
+
+<div class="main">
+
+  <!-- INTRO -->
+  <div class="intro">
+    <div class="intro-label">Calculadora de transporte · México</div>
+    <h1>Cada kilómetro tiene<br>un <em>precio oculto.</em></h1>
+    <p>La gasolina es sólo la punta del iceberg. TransitTab cuantifica el costo total de moverte — depreciación, seguros, mantenimiento y el rendimiento que tu dinero podría estar generando en lugar de estar inmovilizado en un vehículo. Datos reales, promedios nacionales verificados, todo personalizable.</p>
+
+    <div class="intro-actions">
+
+      <a class="btn-cta" href="#personalize" onclick="document.getElementById('personalize').scrollIntoView({behavior:'smooth'});return false;">
+        <span class="btn-cta-icon">🎯</span>
+        <span class="btn-cta-text">
+          <span class="btn-cta-title">Calcula tu costo exacto</span>
+          <span class="btn-cta-sub">Los promedios nacionales son el punto de partida.<br>Tu realidad puede ser muy diferente.</span>
+        </span>
+        <span class="btn-cta-arrow">↓</span>
+      </a>
+
+      <button class="btn-reset" id="btn-reset" onclick="resetToDefaults()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1.5 8a6.5 6.5 0 1 0 1.2-3.8"/>
+          <polyline points="1.5,2 1.5,6 5.5,6"/>
+        </svg>
+        Restablecer valores
+      </button>
+
+    </div>
+  </div>
+
+  <!-- GLOBAL CONTROLS -->
+  <div class="global-controls">
+    <div class="section-label">Configura tu perfil de movilidad</div>
+    <div class="controls-grid">
+
+      <div class="control-group">
+        <label>Kilómetros que recorro al año</label>
+        <div class="input-row">
+          <input type="range" id="km-slider" min="2000" max="40000" step="500" value="10000">
+          <span class="val-display" id="km-display">10,000 km</span>
+        </div>
+        <div class="hint">Promedio nacional: ~10,000 km/año.</div>
+        <button class="km-estimator-trigger" id="kme-trigger" onclick="toggleKmEstimator()">
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+            <circle cx="6" cy="6" r="5"/>
+            <line x1="6" y1="4" x2="6" y2="4.5"/>
+            <line x1="6" y1="5.5" x2="6" y2="8"/>
+          </svg>
+          ¿No sabes cuánto recorres? Calcúlalo aquí
+        </button>
+      </div>
+
+      <div class="control-group">
+        <label>Precio de gasolina Magna</label>
+        <div class="input-row">
+          <div class="inline-input-wrap">
+            <span class="inline-prefix">$</span>
+            <input type="number" id="gas-price" value="23.68" step="0.10" min="15" max="40">
+            <span class="inline-suffix">/ litro</span>
+          </div>
+        </div>
+        <div class="hint">Promedio nacional mayo 2026 · Fuente: PETROIntelligence</div>
+      </div>
+
+      <div class="control-group">
+        <label>Tasa de referencia · CETES</label>
+        <div class="input-row">
+          <input type="range" id="cetes-slider" min="0.03" max="0.18" step="0.005" value="0.095">
+          <span class="val-display" id="cetes-display">9.5%</span>
+        </div>
+        <div class="hint">Rendimiento que tu capital podría generar. CETES 28 días es el piso sin riesgo.</div>
+      </div>
+
+      <div class="control-group">
+        <label>Tarifa eléctrica · CFE</label>
+        <div class="input-row">
+          <div class="inline-input-wrap">
+            <span class="inline-prefix">$</span>
+            <input type="number" id="elec-price" value="2.00" step="0.10" min="0.5" max="10">
+            <span class="inline-suffix">/ kWh</span>
+          </div>
+        </div>
+        <div class="hint">Tarifa doméstica · Excluye DAC · Varía por región y consumo</div>
+      </div>
+
+    </div>
+
+    <div class="toggle-row toggle-opp" style="margin-top:18px;">
+      <input type="checkbox" id="opp-toggle" checked>
+      <label for="opp-toggle">Incluir costo de oportunidad del capital inmovilizado</label>
+      <span class="toggle-hint">El dinero en tu vehículo podría<br>estar generando rendimientos</span>
+    </div>
+
+    <div class="toggle-row toggle-infl">
+      <input type="checkbox" id="infl-toggle">
+      <label for="infl-toggle">Ajustar depreciación por inflación</label>
+      <div class="infl-rate-wrap" id="infl-rate-wrap">
+        <input type="number" id="infl-rate" value="4.5" step="0.1" min="0" max="25">
+        <span>% anual</span>
+      </div>
+      <span class="toggle-hint" id="infl-hint">Descuenta la inflación de la<br>pérdida nominal de valor</span>
+    </div>
+  </div>
+
+  <!-- CHART -->
+  <div class="chart-section">
+    <div class="section-label">Costo real por kilómetro recorrido</div>
+    <div id="chart-container"></div>
+  </div>
+
+  <!-- INSIGHT -->
+  <div class="insight" id="insight-box">
+    <span class="insight-label">// análisis</span>
+    <span id="insight-text">Calculando...</span>
+  </div>
+
+  <!-- BREAKDOWN TABLE -->
+  <div class="breakdown-section">
+    <div class="section-label">Desglose anual · todos los componentes</div>
+    <table id="breakdown-table">
+      <thead>
+        <tr>
+          <th>Modo de transporte</th>
+          <th>Operación</th>
+          <th class="depr-col" id="depr-header">Depreciación</th>
+          <th class="opp-col" id="opp-header">Oportunidad</th>
+          <th>Total / año</th>
+          <th>$ / km</th>
+          <th>$ / mes</th>
+          <th>Capital</th>
+        </tr>
+      </thead>
+      <tbody id="breakdown-body"></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="8">
+            Fuentes verificadas: PETROIntelligence (gasolina) · CONDUSEF / Rastreator.mx (seguros) ·
+            Ciudadanos Observando (transporte público, 26 ciudades) · Motorpasión MX / J.D. Power 2024 (precio promedio auto) ·
+            CetesDirecto.com (tasa de oportunidad). Todos los valores son estimaciones de referencia y pueden variar según perfil, ciudad y condiciones de mercado.
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- CUSTOMIZE -->
+  <div id="personalize" style="margin-bottom: 24px; scroll-margin-top: 80px;">
+    <div class="section-label">Personaliza cada modo a tu realidad</div>
+    <div class="mode-panels" id="mode-panels"></div>
+  </div>
+
+</div>
+
+<footer>
+  <p>
+    <strong style="color:var(--text)">TransitTab</strong> · Herramienta gratuita, sin anuncios, sin registro — para siempre.<br>
+    Datos México 2026 · <a href="#">Ver todas las fuentes</a> · Próximamente: Estados Unidos · Argentina · España
+  </p>
+</footer>
+
+<!-- KM ESTIMATOR DIALOG -->
+<div class="kme-backdrop" id="kme-backdrop" onclick="handleBackdropClick(event)">
+  <div class="kme-dialog" role="dialog" aria-modal="true" aria-label="Calculadora de kilómetros anuales">
+
+    <div class="kme-header">
+      <div>
+        <div class="kme-header-text">¿Cuántos kilómetros recorres al año?</div>
+        <div class="kme-header-sub">Calcula tu distancia real en dos pasos</div>
+      </div>
+      <button class="kme-close" onclick="toggleKmEstimator()" aria-label="Cerrar">✕</button>
+    </div>
+
+    <div class="kme-tabs">
+      <button class="kme-tab active" id="tab-car" onclick="switchKmeTab('car')">🚗 Me muevo en auto</button>
+      <button class="kme-tab" id="tab-other" onclick="switchKmeTab('other')">🚌 Uso otros medios</button>
+    </div>
+
+    <!-- CAR PANEL -->
+    <div class="kme-panel active" id="kme-panel-car">
+      <div class="kme-field">
+        <label>Kilómetros en tu odómetro hoy</label>
+        <input type="number" id="kme-odo" placeholder="ej. 85,000" min="0" max="999999" oninput="calcKmeCar()">
+        <span class="kme-unit">km</span>
+      </div>
+      <div class="kme-field">
+        <label>Años que llevas con el vehículo</label>
+        <input type="number" id="kme-years" placeholder="ej. 4" min="1" max="30" oninput="calcKmeCar()">
+        <span class="kme-unit">años</span>
+      </div>
+    </div>
+
+    <!-- OTHER PANEL -->
+    <div class="kme-panel" id="kme-panel-other">
+      <div class="kme-field">
+        <label>Distancia de casa al trabajo o escuela</label>
+        <input type="number" id="kme-commute" placeholder="ej. 12" min="0" max="200" oninput="calcKmeOther()">
+        <span class="kme-unit">km</span>
+      </div>
+      <div class="kme-field">
+        <label>Días por semana que haces ese trayecto</label>
+        <input type="number" id="kme-days" placeholder="ej. 5" min="0" max="7" oninput="calcKmeOther()">
+        <span class="kme-unit">días/sem</span>
+      </div>
+      <span class="kme-activity-label">¿Qué tan activo eres fuera del trabajo?</span>
+      <div class="kme-activity">
+        <button class="kme-activity-btn" id="act-low" onclick="setActivity('low')">🏠 Poco<br><span style="font-weight:300;font-size:10px">+20%</span></button>
+        <button class="kme-activity-btn active" id="act-med" onclick="setActivity('med')">🚶 Normal<br><span style="font-weight:300;font-size:10px">+50%</span></button>
+        <button class="kme-activity-btn" id="act-high" onclick="setActivity('high')">🏃 Mucho<br><span style="font-weight:300;font-size:10px">+100%</span></button>
+      </div>
+    </div>
+
+    <!-- Result footer -->
+    <div class="kme-result">
+      <div>
+        <div class="kme-result-label">Tu estimado anual</div>
+        <div class="kme-result-value" id="kme-result-display">— km/año</div>
+      </div>
+      <button class="kme-apply" id="kme-apply-btn" onclick="applyKme()" disabled>Usar este valor →</button>
+    </div>
+
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
