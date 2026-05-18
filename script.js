@@ -22,7 +22,7 @@ const MODES = [
     params: {
       // Fuente A01: Motorpasión / J.D. Power 2024
       purchasePrice:  { label: 'Precio de compra', value: 516000, unit: 'MXN', min: 50000, max: 2000000, step: 5000, isCurrency: true },
-      fuelEfficiency: { label: 'Rendimiento', value: 14, unit: 'km/litro', min: 6, max: 25, step: 0.5 },
+      fuelEfficiency: { label: 'Rendimiento', value: 11, unit: 'km/litro', min: 6, max: 25, step: 0.5 },
       // Fuente A04: CONDUSEF / Rastreator 2025
       insurance:      { label: 'Seguro anual', value: 12338, unit: 'MXN/año', min: 0, max: 50000, step: 500, isCurrency: true },
       // Fuente A07: Autofact.mx
