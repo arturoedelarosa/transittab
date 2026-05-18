@@ -5,8 +5,8 @@
 const DEFAULT_GAS_PRICE  = 23.68;  // MXN/litro · Magna promedio nacional
 // Fuente: CFE tarifa doméstica estimada
 const DEFAULT_ELEC_PRICE = 2.00;   // MXN/kWh
-// Fuente: CetesDirecto.com — CETES 28 días mayo 2026
-const DEFAULT_CETES      = 0.095;  // 9.5% anual
+// Fuente: CetesDirecto.com — CETES 28 días mayo 2026 (usando tasa conservadora de instrumentos estables)
+const DEFAULT_CETES      = 0.075;  // 7.5% anual — rendimiento conservador instrumentos financieros estables
 // Fuente: El Universal / estimación uso urbano México
 const DEFAULT_KM         = 10000;  // km/año promedio conductor mexicano
 // Fuente: INEGI — inflación promedio México 2024-2026
@@ -21,16 +21,16 @@ const MODES = [
     hasCapital: true,
     params: {
       // Fuente A01: Motorpasión / J.D. Power 2024
-      purchasePrice:  { label: 'Precio de compra', value: 516000, unit: 'MXN', min: 50000, max: 2000000, step: 5000, isCurrency: true },
-      fuelEfficiency: { label: 'Rendimiento', value: 11, unit: 'km/litro', min: 6, max: 25, step: 0.5 },
+      purchasePrice:  { label: 'Precio de compra', value: 516000, unit: 'MXN', min: 50000, max: 2000000, step: 5000, isCurrency: true, tip: 'Precio que pagaste (o pagarías) por el vehículo. Promedio nacional auto nuevo: $516,000 MXN. Fuente: J.D. Power / Motorpasión MX 2024. Los autos usados aplica el precio que pagaste tú, no el valor actual.' },
+      fuelEfficiency: { label: 'Rendimiento', value: 12, unit: 'km/litro', min: 6, max: 25, step: 0.5, tip: 'Kilómetros que recorre tu auto por litro de gasolina. Promedio nacional: ~12 km/l en uso urbano real (con tráfico, arranques y paradas). Autos compactos en carretera: 14-17 km/l. SUVs y camionetas: 8-11 km/l. Puedes calcularlo llenando el tanque, reseteando el odómetro y dividiendo km recorridos entre litros en la siguiente carga.' },
       // Fuente A04: CONDUSEF / Rastreator 2025
-      insurance:      { label: 'Seguro anual', value: 12338, unit: 'MXN/año', min: 0, max: 50000, step: 500, isCurrency: true },
+      insurance:      { label: 'Seguro anual', value: 12338, unit: 'MXN/año', min: 0, max: 50000, step: 500, isCurrency: true, tip: 'Prima anual de tu seguro de auto. Promedio nacional: ~$12,338 MXN/año para cobertura amplia. Fuente: CONDUSEF / Rastreator.mx 2025. Varía según valor del vehículo, edad del conductor, cobertura contratada y estado donde vives.' },
       // Fuente A07: Autofact.mx
-      maintenance:    { label: 'Mantenimiento anual', value: 6000, unit: 'MXN/año', min: 0, max: 30000, step: 500, isCurrency: true },
+      maintenance:    { label: 'Mantenimiento anual', value: 6000, unit: 'MXN/año', min: 0, max: 30000, step: 500, isCurrency: true, tip: 'Suma de todos los gastos de mantenimiento en un año: afinaciones, cambios de aceite, llantas, frenos, filtros. Promedio estimado: ~$6,000 MXN/año para auto compacto con uso normal. Fuente: Autofact.mx. Autos más nuevos o de mayor gama pueden tener costos mucho más altos.' },
       // Fuente A08: El Universal
-      fees:           { label: 'Tenencia + trámites', value: 2500, unit: 'MXN/año', min: 0, max: 15000, step: 100, isCurrency: true },
+      fees:           { label: 'Tenencia + trámites', value: 2500, unit: 'MXN/año', min: 0, max: 15000, step: 100, isCurrency: true, tip: 'Tenencia vehicular, verificación, refrendo de placas y otros trámites anuales obligatorios. Varía mucho por estado: CDMX cobró tenencia hasta 2012, pero muchos estados la mantienen. Incluye también verificación vehicular si aplica en tu ciudad.' },
       // Fuente A05: KBB / mercado MX
-      deprRate:       { label: 'Depreciación anual', value: 0.18, unit: '%', min: 0.05, max: 0.35, step: 0.01, isPct: true },
+      deprRate:       { label: 'Depreciación anual', value: 0.18, unit: '%', min: 0.05, max: 0.35, step: 0.01, isPct: true, tip: 'Porcentaje del valor del vehículo que se pierde cada año. Promedio nacional: ~18% anual. Los primeros años la caída es mayor (25-30% el año 1), luego se estabiliza. Autos de marcas premium o con alta demanda en reventa deprecian menos. Fuente: KBB / mercado secundario MX.' },
     },
     calc(p, km, gasPrice, cetes, elecPrice, oppOn) {
       const op = (km / p.fuelEfficiency) * gasPrice + p.insurance + p.maintenance + p.fees;
@@ -48,12 +48,12 @@ const MODES = [
     hasCapital: true,
     params: {
       // Fuente AE01: RappiCard / El Informador 2025
-      purchasePrice: { label: 'Precio de compra', value: 600000, unit: 'MXN', min: 200000, max: 2000000, step: 10000, isCurrency: true },
-      consumption:   { label: 'Consumo eléctrico', value: 16, unit: 'kWh/100km', min: 10, max: 30, step: 0.5 },
-      insurance:     { label: 'Seguro anual', value: 11000, unit: 'MXN/año', min: 0, max: 50000, step: 500, isCurrency: true },
-      maintenance:   { label: 'Mantenimiento anual', value: 3000, unit: 'MXN/año', min: 0, max: 20000, step: 500, isCurrency: true },
-      fees:          { label: 'Tenencia + trámites', value: 2500, unit: 'MXN/año', min: 0, max: 15000, step: 100, isCurrency: true },
-      deprRate:      { label: 'Depreciación anual', value: 0.20, unit: '%', min: 0.05, max: 0.40, step: 0.01, isPct: true },
+      purchasePrice: { label: 'Precio de compra', value: 600000, unit: 'MXN', min: 200000, max: 2000000, step: 10000, isCurrency: true, tip: 'Precio del vehículo eléctrico. Promedio nacional auto eléctrico nuevo: ~$600,000 MXN. Fuente: El Informador / RappiCard 2025. El rango va desde ~$350k (BYD Dolphin, Ora) hasta más de $1.2M (Tesla Model 3/Y). El precio de compra más alto es la razón principal por la que el EV sale más caro a pocos km/año.' },
+      consumption:   { label: 'Consumo eléctrico', value: 16, unit: 'kWh/100km', min: 10, max: 30, step: 0.5, tip: 'Energía que consume el vehículo por cada 100 km. Promedio: ~16 kWh/100km. Autos compactos eléctricos (BYD, Ora): 13-17 kWh/100km. SUVs eléctricas: 18-25 kWh/100km. Lo encuentras en las especificaciones del fabricante o en la computadora de a bordo.' },
+      insurance:     { label: 'Seguro anual', value: 11000, unit: 'MXN/año', min: 0, max: 50000, step: 500, isCurrency: true, tip: 'Prima anual de seguro para vehículo eléctrico. Promedio estimado: ~$11,000 MXN/año. Suele ser ligeramente menor al auto de gasolina equivalente porque los EVs tienen menos partes móviles y menor riesgo de incendio por combustible. Sin embargo, la reparación de baterías puede encarecer las coberturas.' },
+      maintenance:   { label: 'Mantenimiento anual', value: 3000, unit: 'MXN/año', min: 0, max: 20000, step: 500, isCurrency: true, tip: 'Los autos eléctricos tienen costos de mantenimiento significativamente menores: sin cambios de aceite, menos desgaste en frenos (frenado regenerativo), sin bujías ni filtros de combustible. El costo principal es la revisión anual de sistema eléctrico y neumáticos. Promedio estimado: ~$3,000 MXN/año.' },
+      fees:          { label: 'Tenencia + trámites', value: 2500, unit: 'MXN/año', min: 0, max: 15000, step: 100, isCurrency: true, tip: 'En varios estados los vehículos eléctricos tienen exenciones o descuentos en tenencia y verificación como incentivo a la electromovilidad. Verifica el esquema de tu estado — en algunos casos este costo puede ser $0.' },
+      deprRate:      { label: 'Depreciación anual', value: 0.20, unit: '%', min: 0.05, max: 0.40, step: 0.01, isPct: true, tip: 'Los autos eléctricos deprecian más rápido que los de gasolina equivalentes por la incertidumbre sobre la vida útil de la batería y la rápida evolución tecnológica del segmento. Promedio estimado: ~20% anual. Una batería degradada puede reducir el valor de reventa drásticamente.' },
     },
     calc(p, km, gasPrice, cetes, elecPrice, oppOn) {
       const op = (km / 100) * p.consumption * elecPrice + p.insurance + p.maintenance + p.fees;
@@ -70,11 +70,11 @@ const MODES = [
     name: 'Motocicleta',
     hasCapital: true,
     params: {
-      purchasePrice:  { label: 'Precio de compra', value: 45000, unit: 'MXN', min: 10000, max: 300000, step: 1000, isCurrency: true },
-      fuelEfficiency: { label: 'Rendimiento', value: 32, unit: 'km/litro', min: 15, max: 60, step: 1 },
-      insurance:      { label: 'Seguro básico anual', value: 2500, unit: 'MXN/año', min: 0, max: 15000, step: 100, isCurrency: true },
-      maintenance:    { label: 'Mantenimiento anual', value: 3000, unit: 'MXN/año', min: 0, max: 15000, step: 100, isCurrency: true },
-      deprRate:       { label: 'Depreciación anual', value: 0.20, unit: '%', min: 0.05, max: 0.40, step: 0.01, isPct: true },
+      purchasePrice:  { label: 'Precio de compra', value: 45000, unit: 'MXN', min: 10000, max: 300000, step: 1000, isCurrency: true, tip: 'Precio de compra de la motocicleta. El rango es muy amplio: motos de trabajo (Honda CB, Italika) desde $20-35k, motos deportivas o de marca desde $80k en adelante. Usa el precio que pagaste tú.' },
+      fuelEfficiency: { label: 'Rendimiento', value: 32, unit: 'km/litro', min: 15, max: 60, step: 1, tip: 'Kilómetros por litro de la moto. Las motos son significativamente más eficientes que los autos: motos de trabajo 35-50 km/l, motos deportivas 20-30 km/l, motos grandes/touring 15-20 km/l. Promedio estimado: ~32 km/l.' },
+      insurance:      { label: 'Seguro básico anual', value: 2500, unit: 'MXN/año', min: 0, max: 15000, step: 100, isCurrency: true, tip: 'Prima anual de seguro básico para motocicleta. Promedio estimado: ~$2,500 MXN/año para cobertura de responsabilidad civil. Muchos motociclistas circulan sin seguro, lo cual es un riesgo financiero significativo en caso de accidente.' },
+      maintenance:    { label: 'Mantenimiento anual', value: 3000, unit: 'MXN/año', min: 0, max: 15000, step: 100, isCurrency: true, tip: 'Mantenimiento anual de la moto: aceite, cadena, llantas, filtros, frenos. El mantenimiento es más frecuente que en autos pero más barato por servicio. Promedio estimado: ~$3,000 MXN/año con uso normal.' },
+      deprRate:       { label: 'Depreciación anual', value: 0.20, unit: '%', min: 0.05, max: 0.40, step: 0.01, isPct: true, tip: 'Las motocicletas deprecian rápido, especialmente en los primeros años. Motos populares de trabajo mantienen mejor su valor por alta demanda de reventa. Motos deportivas o de importación deprecian más. Promedio estimado: ~20% anual.' },
     },
     calc(p, km, gasPrice, cetes, elecPrice, oppOn) {
       const op = (km / p.fuelEfficiency) * gasPrice + p.insurance + p.maintenance;
@@ -88,19 +88,16 @@ const MODES = [
   {
     id: 'scooter',
     icon: '🛴',
-    name: 'Bici / Scooter eléctrico',
+    name: 'Ebike / Scooter eléctrico',
     hasCapital: true,
-    // Default de $18,000 es punto medio entre scooter básico (~$10k) y e-bike de entrada (~$25k).
-    // Rango ampliado hasta $150,000 para cubrir e-bikes de calidad y cargo bikes.
     params: {
-      purchasePrice: { label: 'Precio de compra', value: 18000, unit: 'MXN', min: 5000, max: 150000, step: 500, isCurrency: true },
-      range:         { label: 'Autonomía por carga', value: 50, unit: 'km/carga', min: 20, max: 150, step: 5 },
-      chargeCost:    { label: 'Costo por carga', value: 0.80, unit: 'MXN/carga', min: 0.20, max: 5, step: 0.10 },
-      maintenance:   { label: 'Mantenimiento anual', value: 1500, unit: 'MXN/año', min: 0, max: 8000, step: 100, isCurrency: true },
-      deprRate:      { label: 'Depreciación anual', value: 0.18, unit: '%', min: 0.05, max: 0.40, step: 0.01, isPct: true },
+      purchasePrice: { label: 'Precio de compra', value: 20000, unit: 'MXN', min: 1000, max: 100000, step: 500, isCurrency: true, tip: 'Precio de compra de tu vehículo. Ebikes de entrada: ~$12,000–$20,000 MXN, de buena calidad: $30,000–$80,000+. Scooters eléctricos básicos: $8,000–$15,000. Modelos premium: $25,000–$60,000. Usa el precio que pagaste tú.' },
+      kmPerKwh:      { label: 'Eficiencia energética', value: 30, unit: 'km/kWh', min: 5, max: 80, step: 1, tip: 'Kilómetros recorridos por cada kWh consumido. Ebikes urbanas: ~30–50 km/kWh. Scooters ligeros: ~20–35 km/kWh. Scooters más pesados o rápidos: ~10–20 km/kWh. El costo se calcula automáticamente con la tarifa CFE que configuraste arriba.' },
+      maintenance:   { label: 'Mantenimiento anual', value: 1500, unit: 'MXN/año', min: 0, max: 8000, step: 100, isCurrency: true, tip: 'Mantenimiento anual: llantas, frenos, cadena (ebike), revisión eléctrica. Muy bajo comparado con vehículos de combustión. El gasto mayor a mediano plazo suele ser el reemplazo de batería (3–5 años de vida útil). Promedio estimado: ~$1,500 MXN/año.' },
+      deprRate:      { label: 'Depreciación anual', value: 0.18, unit: '%', min: 0.02, max: 0.40, step: 0.01, isPct: true, tip: 'Porcentaje del valor que se pierde por año. Ebikes y scooters eléctricos deprecian más que bicicletas mecánicas (~8%) por la degradación de la batería y la rápida evolución del mercado. Promedio estimado: ~18% anual.' },
     },
     calc(p, km, gasPrice, cetes, elecPrice, oppOn) {
-      const op = (km / p.range) * p.chargeCost + p.maintenance;
+      const op = (km / p.kmPerKwh) * elecPrice + p.maintenance;
       const cap = p.purchasePrice;
       const depr = cap * p.deprRate;
       const residual = cap * (1 - p.deprRate);
@@ -114,9 +111,9 @@ const MODES = [
     name: 'Bicicleta',
     hasCapital: true,
     params: {
-      purchasePrice: { label: 'Precio de compra', value: 8000, unit: 'MXN', min: 1000, max: 80000, step: 500, isCurrency: true },
-      maintenance:   { label: 'Mantenimiento anual', value: 2000, unit: 'MXN/año', min: 0, max: 10000, step: 100, isCurrency: true },
-      deprRate:      { label: 'Depreciación anual', value: 0.08, unit: '%', min: 0.02, max: 0.25, step: 0.01, isPct: true },
+      purchasePrice: { label: 'Precio de compra', value: 8000, unit: 'MXN', min: 1000, max: 80000, step: 500, isCurrency: true, tip: 'Precio de compra de la bicicleta. El rango es enorme: bici básica de uso urbano $1,500-4,000 MXN, bici de buena calidad $5,000-15,000 MXN, bici de carbono o eléctrica $20,000+. El default asume una bici urbana de buena calidad.' },
+      maintenance:   { label: 'Mantenimiento anual', value: 2000, unit: 'MXN/año', min: 0, max: 10000, step: 100, isCurrency: true, tip: 'Mantenimiento anual de la bicicleta: llantas, cadena, cables, frenos, ajustes. Para un ciclista urbano con uso diario, ~$2,000 MXN/año es una estimación conservadora. Incluye eventuales reparaciones por ponchaduras y desgaste normal.' },
+      deprRate:      { label: 'Depreciación anual', value: 0.08, unit: '%', min: 0.02, max: 0.25, step: 0.01, isPct: true, tip: 'Las bicicletas deprecian mucho menos que los vehículos motorizados, especialmente las de buena marca. Una bici bien mantenida puede conservar el 70-80% de su valor por años. Promedio estimado: ~8% anual.' },
     },
     calc(p, km, gasPrice, cetes, elecPrice, oppOn) {
       const op = p.maintenance;
@@ -134,8 +131,8 @@ const MODES = [
     hasCapital: false,
     params: {
       // Fuente TP01: Ciudadanos Observando — promedio 26 ciudades MX excl. CDMX
-      farePerTrip:   { label: 'Tarifa por viaje', value: 12.00, unit: 'MXN/viaje', min: 3, max: 30, step: 0.50 },
-      tripsPerMonth: { label: 'Viajes al mes', value: 44, unit: 'viajes/mes', min: 10, max: 120, step: 2 },
+      farePerTrip:   { label: 'Tarifa por viaje', value: 12.00, unit: 'MXN/viaje', min: 3, max: 30, step: 0.50, tip: 'Tarifa promedio por viaje en transporte público. Promedio nacional (excluyendo CDMX): ~$12 MXN. CDMX es un caso especial subsidiado ($5-7.50). Monterrey: ~$17. Guadalajara: ~$11. Fuente: Ciudadanos Observando, comparativo 26 ciudades 2025. Usa la tarifa de tu ciudad.' },
+      tripsPerMonth: { label: 'Viajes al mes', value: 44, unit: 'viajes/mes', min: 10, max: 120, step: 2, tip: 'Número de viajes en transporte público por mes. 44 viajes/mes equivale a ~2 viajes por día hábil (ida y vuelta al trabajo). Si usas transporte público también fines de semana o para múltiples destinos, aumenta este número.' },
     },
     calc(p, km, gasPrice, cetes, elecPrice, oppOn) {
       const op = p.farePerTrip * p.tripsPerMonth * 12;
@@ -149,9 +146,9 @@ const MODES = [
     hasCapital: false,
     params: {
       // Fuente U01: post-reforma laboral julio 2025
-      costPerKm:  { label: 'Tarifa por km', value: 8.00, unit: 'MXN/km', min: 3, max: 25, step: 0.50 },
-      baseFare:   { label: 'Tarifa base por viaje', value: 12.00, unit: 'MXN/viaje', min: 5, max: 50, step: 1 },
-      avgTripKm:  { label: 'Km por viaje promedio', value: 8, unit: 'km/viaje', min: 2, max: 30, step: 1 },
+      costPerKm:  { label: 'Tarifa por km', value: 8.00, unit: 'MXN/km', min: 3, max: 25, step: 0.50, tip: 'Costo por kilómetro en Uber/Didi. Varía según ciudad, hora del día y demanda. Estimado post-reforma laboral julio 2025 que incrementó costos operativos. Ciudad de México y Monterrey suelen ser más caros. En ciudades medianas puede ser menor.' },
+      baseFare:   { label: 'Tarifa base por viaje', value: 12.00, unit: 'MXN/viaje', min: 5, max: 50, step: 1, tip: 'Cargo fijo por viaje, independiente de la distancia. Se aplica al inicio de cada trayecto y cubre el tiempo de espera y los primeros kilómetros. Varía por ciudad y plataforma.' },
+      avgTripKm:  { label: 'Km por viaje promedio', value: 8, unit: 'km/viaje', min: 2, max: 30, step: 1, tip: 'Distancia promedio de cada viaje que tomas en Uber o Didi. Afecta el número de viajes necesarios para cubrir tus kilómetros anuales. Un viaje urbano típico en ciudades mexicanas es de 6-12 km.' },
     },
     calc(p, km, gasPrice, cetes, elecPrice, oppOn) {
       const trips = km / p.avgTripKm;
@@ -334,11 +331,12 @@ function renderTable(data) {
 
 function buildFieldHTML(mode, key, param) {
   const rawVal = state.params[mode.id][key];
+  const tipHTML = param.tip ? `<span class="tt" data-tip="${param.tip.replace(/"/g, '&quot;')}">?</span>` : '';
 
   if (param.isPct) {
     return `
       <div class="field">
-        <label>${param.label}</label>
+        <label>${param.label} ${tipHTML}</label>
         <input class="plain-input" type="number"
           data-mode="${mode.id}" data-param="${key}" data-ispct="1"
           value="${(rawVal * 100).toFixed(0)}"
@@ -350,7 +348,7 @@ function buildFieldHTML(mode, key, param) {
   if (param.isCurrency) {
     return `
       <div class="field">
-        <label>${param.label}</label>
+        <label>${param.label} ${tipHTML}</label>
         <div class="currency-wrap">
           <span class="currency-prefix">$</span>
           <input type="text"
@@ -364,7 +362,7 @@ function buildFieldHTML(mode, key, param) {
 
   return `
     <div class="field">
-      <label>${param.label}</label>
+      <label>${param.label} ${tipHTML}</label>
       <input class="plain-input" type="number"
         data-mode="${mode.id}" data-param="${key}"
         value="${rawVal}"
@@ -398,12 +396,6 @@ function renderPanels() {
         <div class="oh-result" id="oh-result">—</div>
       </div>` : '';
 
-    const scooterHintHTML = mode.id === 'scooter' ? `
-      <div class="odometer-helper" style="margin-top:12px">
-        <strong>🛴 Scooter eléctrico &nbsp;·&nbsp; ⚡🚲 Bicicleta eléctrica</strong>
-        <p>Este modo cubre ambas categorías. El costo por km es prácticamente idéntico entre las dos — la diferencia real está en el precio de compra. Ajusta ese valor a tu vehículo real: una e-bike de entrada cuesta ~$12,000–$20,000 MXN, una de calidad $30,000–$80,000+.</p>
-      </div>` : '';
-
     panel.innerHTML = `
       <div class="panel-header" data-id="${mode.id}">
         <div class="panel-title">
@@ -418,7 +410,6 @@ function renderPanels() {
       <div class="panel-body" id="body-${mode.id}">
         ${fieldsHTML}
         ${odoHTML}
-        ${scooterHintHTML}
       </div>
     `;
     container.appendChild(panel);
@@ -482,7 +473,7 @@ function renderPanels() {
           res.style.cursor = 'pointer';
           res.onclick = () => {
             state.km = kmAnual;
-            document.getElementById('km-slider').value = Math.min(Math.max(kmAnual, 2000), 40000);
+            document.getElementById('km-slider').value = Math.min(Math.max(kmAnual, 2000), 75000);
             document.getElementById('km-display').textContent = fmtKm(kmAnual) + ' km';
             update();
           };
@@ -580,7 +571,7 @@ function calcKmeOther() {
 
 function applyKme() {
   if (kmeCurrentValue === null) return;
-  const clamped = Math.min(Math.max(kmeCurrentValue, 2000), 40000);
+  const clamped = Math.min(Math.max(kmeCurrentValue, 2000), 75000);
   state.km = clamped;
   document.getElementById('km-slider').value        = clamped;
   document.getElementById('km-display').textContent = fmtKm(clamped) + ' km';
@@ -690,6 +681,63 @@ function resetToDefaults() {
       Restablecer valores`;
   }, 1800);
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TOOLTIP SYSTEM
+// ═══════════════════════════════════════════════════════════════════════════
+
+(function initTooltips() {
+  const popup = document.createElement('div');
+  popup.className = 'tt-popup';
+  document.body.appendChild(popup);
+
+  let activeEl = null;
+
+  function position(el) {
+    const rect = el.getBoundingClientRect();
+    const margin = 10;
+    const popupW = 280;
+    let left = rect.left;
+    let top  = rect.bottom + 8;
+
+    // Flip above if not enough room below
+    if (top + 120 > window.innerHeight) {
+      top = rect.top - 8;
+      popup.style.transform = 'translateY(-100%)';
+    } else {
+      popup.style.transform = '';
+    }
+
+    // Keep within viewport horizontally
+    if (left + popupW > window.innerWidth - margin) {
+      left = window.innerWidth - popupW - margin;
+    }
+    if (left < margin) left = margin;
+
+    popup.style.left = left + 'px';
+    popup.style.top  = top + 'px';
+  }
+
+  document.addEventListener('mouseover', e => {
+    const el = e.target.closest('.tt');
+    if (!el || !el.dataset.tip) return;
+    activeEl = el;
+    popup.textContent = el.dataset.tip;
+    popup.classList.add('visible');
+    position(el);
+  });
+
+  document.addEventListener('mouseout', e => {
+    const el = e.target.closest('.tt');
+    if (!el) return;
+    activeEl = null;
+    popup.classList.remove('visible');
+  });
+
+  window.addEventListener('scroll', () => {
+    if (activeEl) position(activeEl);
+  }, { passive: true });
+})();
 
 // ── Init ───────────────────────────────────────────────────────────────────
 renderPanels();
