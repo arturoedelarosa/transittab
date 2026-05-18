@@ -188,7 +188,170 @@ header {
 .btn-reset:hover svg { transform: rotate(-180deg); }
 .btn-reset.flash { border-color: var(--accent); color: var(--accent); }
 
-/* ── KM ESTIMATOR DIALOG ── */
+/* ── KM HERO ROW ── */
+.km-hero {
+  background: linear-gradient(135deg, rgba(31,200,176,0.08) 0%, rgba(31,200,176,0.04) 100%);
+  border: 1px solid rgba(31,200,176,0.22);
+  border-radius: var(--radius);
+  padding: 22px 24px 18px;
+  margin-bottom: 22px;
+  text-align: center;
+}
+.km-hero-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.km-hero-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+.km-hero-slider-row input[type="range"] {
+  flex: 1;
+  max-width: 520px;
+  -webkit-appearance: none;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  outline: none;
+}
+.km-hero-slider-row input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px; height: 22px;
+  background: var(--accent);
+  border-radius: 50%;
+  cursor: pointer;
+  border: 3px solid var(--surface);
+  box-shadow: 0 0 0 2px var(--accent), 0 2px 8px rgba(31,200,176,0.4);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.km-hero-slider-row input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 2px var(--accent), 0 4px 14px rgba(31,200,176,0.55);
+}
+.km-hero-bound {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.km-hero-val {
+  font-size: 22px !important;
+  min-width: 120px !important;
+  text-align: left !important;
+  flex-shrink: 0;
+}
+.km-hero-sub {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--muted2);
+}
+
+/* ── ASSUMPTIONS HEADER ── */
+.assumptions-header {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 13px 16px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  flex-wrap: wrap;
+}
+.assumptions-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted2);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.assumptions-desc {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* ── TOOLTIP SYSTEM ── */
+.tt {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--muted2);
+  cursor: help;
+  position: relative;
+  flex-shrink: 0;
+  vertical-align: middle;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  line-height: 1;
+}
+.tt:hover {
+  background: var(--accent-l);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.tt-inline {
+  vertical-align: middle;
+}
+
+/* Tooltip popup */
+.tt-popup {
+  display: none;
+  position: fixed;
+  z-index: 300;
+  max-width: 280px;
+  background: var(--surface);
+  border: 1px solid var(--accent-d);
+  border-radius: var(--radius);
+  padding: 11px 14px;
+  font-size: 12px;
+  font-family: var(--sans);
+  font-weight: 400;
+  color: var(--muted2);
+  line-height: 1.55;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.5);
+  pointer-events: none;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.tt-popup.visible { display: block; }
+.tt-popup::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: 16px;
+  width: 8px; height: 8px;
+  background: var(--surface);
+  border-top: 1px solid var(--accent-d);
+  border-left: 1px solid var(--accent-d);
+  transform: rotate(45deg);
+}
+
+
 .km-estimator-trigger {
   display: inline-flex;
   align-items: center;
