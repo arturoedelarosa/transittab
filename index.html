@@ -48,15 +48,21 @@
   <!-- GLOBAL CONTROLS -->
   <div class="global-controls">
     <div class="section-label">Configura tu perfil de movilidad</div>
-    <div class="controls-grid">
 
-      <div class="control-group">
-        <label>Kilómetros que recorro al año</label>
-        <div class="input-row">
-          <input type="range" id="km-slider" min="2000" max="40000" step="500" value="10000">
-          <span class="val-display" id="km-display">10,000 km</span>
-        </div>
-        <div class="hint">Promedio nacional: ~10,000 km/año.</div>
+    <!-- KM HERO ROW -->
+    <div class="km-hero">
+      <div class="km-hero-label">
+        ¿Cuántos kilómetros recorres al año?
+        <span class="tt" data-tip="Este es el dato más importante de la calculadora. Todo se escala con base en tus kilómetros reales. El promedio nacional es ~10,000 km/año, pero tu caso puede ser muy diferente dependiendo de dónde vives y cuánto te mueves.">?</span>
+      </div>
+      <div class="km-hero-slider-row">
+        <span class="km-hero-bound">2,000</span>
+        <input type="range" id="km-slider" min="2000" max="75000" step="500" value="10000">
+        <span class="km-hero-bound">75,000</span>
+        <span class="val-display km-hero-val" id="km-display">10,000 km</span>
+      </div>
+      <div class="km-hero-sub">
+        <span>Promedio nacional: ~10,000 km/año</span>
         <button class="km-estimator-trigger" id="kme-trigger" onclick="toggleKmEstimator()">
           <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
             <circle cx="6" cy="6" r="5"/>
@@ -66,9 +72,21 @@
           ¿No sabes cuánto recorres? Calcúlalo aquí
         </button>
       </div>
+    </div>
+
+    <!-- BASE ASSUMPTIONS SUBHEADER -->
+    <div class="assumptions-header">
+      <div class="assumptions-title">Supuestos base nacionales</div>
+      <div class="assumptions-desc">Usamos promedios verificados para México. Si conoces los valores exactos de tu región, ajústalos aquí — los cálculos se actualizan al instante.</div>
+    </div>
+
+    <div class="controls-grid">
 
       <div class="control-group">
-        <label>Precio de gasolina Magna</label>
+        <label>
+          Precio de gasolina Magna
+          <span class="tt" data-tip="Precio promedio nacional de gasolina Magna. Varía por estado y semana. Fuente: PETROIntelligence / nacionalgasolinero.com — mayo 2026. Si en tu ciudad el precio es diferente, cámbialo.">?</span>
+        </label>
         <div class="input-row">
           <div class="inline-input-wrap">
             <span class="inline-prefix">$</span>
@@ -80,16 +98,22 @@
       </div>
 
       <div class="control-group">
-        <label>Tasa de referencia · CETES</label>
+        <label>
+          Rendimiento de instrumentos financieros seguros
+          <span class="tt" data-tip="Tasa de rendimiento anual que tu dinero podría generar en instrumentos de bajo riesgo: CETES, pagarés bancarios, fondos de deuda. Se usa para calcular el costo de oportunidad del capital inmovilizado en tu vehículo. Referencia: CETES 28 días ronda el 9-10% anual en 2026, pero instrumentos como pagarés o fondos pueden estar entre 7-9%. Usa el valor que corresponda a donde tienes tu ahorro.">?</span>
+        </label>
         <div class="input-row">
-          <input type="range" id="cetes-slider" min="0.03" max="0.18" step="0.005" value="0.095">
-          <span class="val-display" id="cetes-display">9.5%</span>
+          <input type="range" id="cetes-slider" min="0.03" max="0.18" step="0.005" value="0.075">
+          <span class="val-display" id="cetes-display">7.5%</span>
         </div>
-        <div class="hint">Rendimiento que tu capital podría generar. CETES 28 días es el piso sin riesgo.</div>
+        <div class="hint">Rendimiento libre de riesgo que tu capital podría generar en lugar de estar en un vehículo.</div>
       </div>
 
       <div class="control-group">
-        <label>Tarifa eléctrica · CFE</label>
+        <label>
+          Tarifa eléctrica · CFE
+          <span class="tt" data-tip="Costo por kWh en la tarifa doméstica de CFE. Solo importa si comparas un vehículo eléctrico. La tarifa varía mucho por región y nivel de consumo — la tarifa DAC puede ser 3-4x mayor. Fuente: CFE tarifas domésticas 2026.">?</span>
+        </label>
         <div class="input-row">
           <div class="inline-input-wrap">
             <span class="inline-prefix">$</span>
@@ -104,13 +128,19 @@
 
     <div class="toggle-row toggle-opp" style="margin-top:18px;">
       <input type="checkbox" id="opp-toggle" checked>
-      <label for="opp-toggle">Incluir costo de oportunidad del capital inmovilizado</label>
+      <label for="opp-toggle">
+        Incluir costo de oportunidad del capital inmovilizado
+        <span class="tt tt-inline" data-tip="El dinero que tienes en tu vehículo podría estar generando rendimientos en lugar de perder valor con la depreciación. Este toggle añade esa pérdida invisible como un costo real. Es uno de los costos más ignorados por los propietarios de vehículos.">?</span>
+      </label>
       <span class="toggle-hint">El dinero en tu vehículo podría<br>estar generando rendimientos</span>
     </div>
 
     <div class="toggle-row toggle-infl">
       <input type="checkbox" id="infl-toggle">
-      <label for="infl-toggle">Ajustar depreciación por inflación</label>
+      <label for="infl-toggle">
+        Ajustar depreciación por inflación
+        <span class="tt tt-inline" data-tip="La depreciación nominal (lo que aparece en los cálculos) incluye parte de la inflación general. Al activar este toggle, se descuenta la inflación de la tasa de depreciación para ver la pérdida real de poder adquisitivo. Fórmula: depreciación real = depreciación nominal − tasa inflación (mínimo 0).">?</span>
+      </label>
       <div class="infl-rate-wrap" id="infl-rate-wrap">
         <input type="number" id="infl-rate" value="4.5" step="0.1" min="0" max="25">
         <span>% anual</span>
