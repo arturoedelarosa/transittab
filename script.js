@@ -1,37 +1,105 @@
 // ═══════════════════════════════════════════════════════════════════════════
 // ── EDITABLE DATA BLOCK — actualiza estos valores cuando cambien los datos ──
 // ═══════════════════════════════════════════════════════════════════════════
-// Fuente: PETROIntelligence via nacionalgasolinero.com — mayo 2026
-const DEFAULT_GAS_PRICE  = 23.68;  // MXN/litro · Magna promedio nacional
-// Fuente: CFE tarifa doméstica estimada
-const DEFAULT_ELEC_PRICE = 2.00;   // MXN/kWh
-// Fuente: CetesDirecto.com — CETES 28 días mayo 2026 (usando tasa conservadora de instrumentos estables)
-const DEFAULT_CETES      = 0.075;  // 7.5% anual — rendimiento conservador instrumentos financieros estables
-// Fuente: El Universal / estimación uso urbano México
-const DEFAULT_KM         = 10000;  // km/año promedio conductor mexicano
-// Fuente: INEGI — inflación promedio México 2024-2026
-const DEFAULT_INFL_RATE  = 0.045;  // 4.5% anual
+const DEFAULT_GAS_PRICE  = 23.68;   // MXN/litro · Magna promedio nacional — PETROIntelligence mayo 2026
+const DEFAULT_ELEC_PRICE = 2.00;    // MXN/kWh — CFE tarifa doméstica estimada
+const DEFAULT_CETES      = 0.075;   // 7.5% anual — rendimiento conservador instrumentos financieros
+const DEFAULT_KM         = 10000;   // km/año promedio conductor mexicano — INEGI / El Universal
+const DEFAULT_INFL_RATE  = 0.045;   // 4.5% anual — INEGI inflación promedio MX 2024-2026
 // ═══════════════════════════════════════════════════════════════════════════
 
+// ── VEHICLE PRESETS ────────────────────────────────────────────────────────
+const PRESETS = {
+  car: [
+    {
+      id: 'car-compact',
+      label: 'Subcompacto / Compacto',
+      examples: 'Aveo, Versa, Vento, March',
+      icon: '🚗',
+      new:  { purchasePrice: 310000, fuelEfficiency: 14, insurance: 9500,  maintenance: 5000, fees: 2000, deprRate: 0.18 },
+      used: { purchasePrice: 130000, fuelEfficiency: 13, insurance: 7000,  maintenance: 7000, fees: 1500, deprRate: 0.15 },
+    },
+    {
+      id: 'car-sedan',
+      label: 'Sedán mediano',
+      examples: 'Altima, Jetta, Corolla, Mazda 3',
+      icon: '🚗',
+      new:  { purchasePrice: 450000, fuelEfficiency: 13, insurance: 12000, maintenance: 6000, fees: 2500, deprRate: 0.18 },
+      used: { purchasePrice: 200000, fuelEfficiency: 12, insurance: 9000,  maintenance: 8000, fees: 2000, deprRate: 0.15 },
+    },
+    {
+      id: 'car-suv',
+      label: 'SUV compacta',
+      examples: 'Tiguan, HR-V, Equinox, CX-5',
+      icon: '🚙',
+      new:  { purchasePrice: 580000, fuelEfficiency: 11, insurance: 14000, maintenance: 7000, fees: 3000, deprRate: 0.20 },
+      used: { purchasePrice: 280000, fuelEfficiency: 10, insurance: 11000, maintenance: 9000, fees: 2500, deprRate: 0.16 },
+    },
+    {
+      id: 'car-truck',
+      label: 'SUV grande / Pickup',
+      examples: 'Silverado, Hilux, Expedition, RAM',
+      icon: '🛻',
+      new:  { purchasePrice: 850000, fuelEfficiency: 9,  insurance: 18000, maintenance: 9000, fees: 4000, deprRate: 0.20 },
+      used: { purchasePrice: 400000, fuelEfficiency: 8,  insurance: 13000, maintenance: 11000,fees: 3000, deprRate: 0.16 },
+    },
+  ],
+  ev: [
+    {
+      id: 'ev-compact',
+      label: 'Compacto eléctrico',
+      examples: 'BYD Dolphin, Ora, MG4',
+      icon: '⚡',
+      new:  { purchasePrice: 420000, consumption: 15, insurance: 9500,  maintenance: 2500, fees: 1500, deprRate: 0.20 },
+      used: { purchasePrice: 280000, consumption: 16, insurance: 8000,  maintenance: 3000, fees: 1200, deprRate: 0.18 },
+    },
+    {
+      id: 'ev-suv',
+      label: 'SUV eléctrica',
+      examples: 'BYD Atto 3, Tesla Model Y, Volvo EX40',
+      icon: '⚡',
+      new:  { purchasePrice: 750000, consumption: 19, insurance: 13000, maintenance: 3000, fees: 2000, deprRate: 0.22 },
+      used: { purchasePrice: 480000, consumption: 20, insurance: 10000, maintenance: 3500, fees: 1800, deprRate: 0.20 },
+    },
+  ],
+  moto: [
+    {
+      id: 'moto-urban',
+      label: 'Urbana / De trabajo',
+      examples: 'Italika, Honda CB, Carabela, Yamaha FZ',
+      icon: '🏍',
+      new:  { purchasePrice: 35000,  fuelEfficiency: 40, insurance: 2000, maintenance: 2500, deprRate: 0.20 },
+      used: { purchasePrice: 18000,  fuelEfficiency: 38, insurance: 1500, maintenance: 3000, deprRate: 0.18 },
+    },
+    {
+      id: 'moto-sport',
+      label: 'Deportiva / Grande',
+      examples: 'Honda CB500, Kawasaki, Triumph, BMW GS',
+      icon: '🏍',
+      new:  { purchasePrice: 120000, fuelEfficiency: 22, insurance: 5000, maintenance: 5000, deprRate: 0.22 },
+      used: { purchasePrice: 60000,  fuelEfficiency: 20, insurance: 3500, maintenance: 6000, deprRate: 0.20 },
+    },
+  ],
+};
+
+// ── MODE DEFINITIONS ───────────────────────────────────────────────────────
 const MODES = [
   {
     id: 'car',
     icon: '🚗',
     name: 'Auto de gasolina',
     hasCapital: true,
-    params: {
-      // Fuente A01: Motorpasión / J.D. Power 2024
-      purchasePrice:  { label: 'Precio de compra', value: 516000, unit: 'MXN', min: 50000, max: 2000000, step: 5000, isCurrency: true, tip: 'Precio que pagaste (o pagarías) por el vehículo. Promedio nacional auto nuevo: $516,000 MXN. Fuente: J.D. Power / Motorpasión MX 2024. Los autos usados aplica el precio que pagaste tú, no el valor actual.' },
-      fuelEfficiency: { label: 'Rendimiento', value: 12, unit: 'km/litro', min: 6, max: 25, step: 0.5, tip: 'Kilómetros que recorre tu auto por litro de gasolina. Promedio nacional: ~12 km/l en uso urbano real (con tráfico, arranques y paradas). Autos compactos en carretera: 14-17 km/l. SUVs y camionetas: 8-11 km/l. Puedes calcularlo llenando el tanque, reseteando el odómetro y dividiendo km recorridos entre litros en la siguiente carga.' },
-      // Fuente A04: CONDUSEF / Rastreator 2025
-      insurance:      { label: 'Seguro anual', value: 12338, unit: 'MXN/año', min: 0, max: 50000, step: 500, isCurrency: true, tip: 'Prima anual de tu seguro de auto. Promedio nacional: ~$12,338 MXN/año para cobertura amplia. Fuente: CONDUSEF / Rastreator.mx 2025. Varía según valor del vehículo, edad del conductor, cobertura contratada y estado donde vives.' },
-      // Fuente A07: Autofact.mx
-      maintenance:    { label: 'Mantenimiento anual', value: 6000, unit: 'MXN/año', min: 0, max: 30000, step: 500, isCurrency: true, tip: 'Suma de todos los gastos de mantenimiento en un año: afinaciones, cambios de aceite, llantas, frenos, filtros. Promedio estimado: ~$6,000 MXN/año para auto compacto con uso normal. Fuente: Autofact.mx. Autos más nuevos o de mayor gama pueden tener costos mucho más altos.' },
-      // Fuente A08: El Universal
-      fees:           { label: 'Tenencia + trámites', value: 2500, unit: 'MXN/año', min: 0, max: 15000, step: 100, isCurrency: true, tip: 'Tenencia vehicular, verificación, refrendo de placas y otros trámites anuales obligatorios. Varía mucho por estado: CDMX cobró tenencia hasta 2012, pero muchos estados la mantienen. Incluye también verificación vehicular si aplica en tu ciudad.' },
-      // Fuente A05: KBB / mercado MX
-      deprRate:       { label: 'Depreciación anual', value: 0.18, unit: '%', min: 0.05, max: 0.35, step: 0.01, isPct: true, tip: 'Porcentaje del valor del vehículo que se pierde cada año. Promedio nacional: ~18% anual. Los primeros años la caída es mayor (25-30% el año 1), luego se estabiliza. Autos de marcas premium o con alta demanda en reventa deprecian menos. Fuente: KBB / mercado secundario MX.' },
-    },
+    hasPresets: true,
+    kmEstimators: ['odometer', 'commute'],
+    defaultParams: { purchasePrice: 516000, fuelEfficiency: 12, insurance: 12338, maintenance: 6000, fees: 2500, deprRate: 0.18 },
+    fields: [
+      { key: 'purchasePrice', label: 'Precio de compra', unit: 'MXN', isCurrency: true, tip: 'Precio que pagaste por el vehículo. Los presets usan promedios nacionales — cambia por el tuyo si lo sabes.' },
+      { key: 'fuelEfficiency', label: 'Rendimiento', unit: 'km/litro', step: 0.5, min: 6, max: 25, tip: 'Km por litro en uso urbano real. Puedes calcularlo: llena el tanque, resetea el odómetro, divide km recorridos entre litros en la siguiente carga.' },
+      { key: 'insurance', label: 'Seguro anual', unit: 'MXN/año', isCurrency: true, tip: 'Prima anual de tu seguro. Promedio nacional cobertura amplia: ~$12,338. Fuente: CONDUSEF / Rastreator.mx 2025.' },
+      { key: 'maintenance', label: 'Mantenimiento anual', unit: 'MXN/año', isCurrency: true, tip: 'Aceite, afinaciones, llantas, frenos, filtros. Promedio: ~$6,000/año auto compacto.' },
+      { key: 'fees', label: 'Tenencia + trámites', unit: 'MXN/año', isCurrency: true, tip: 'Tenencia, verificación, refrendo de placas. Varía mucho por estado.' },
+      { key: 'deprRate', label: 'Depreciación anual', unit: '%', isPct: true, step: 1, min: 5, max: 35, tip: 'Porcentaje del valor que pierdes cada año. Promedio: ~18%. El primer año puede ser 25-30%.' },
+    ],
     calc(p, km, gasPrice, cetes, elecPrice, oppOn) {
       const op = (km / p.fuelEfficiency) * gasPrice + p.insurance + p.maintenance + p.fees;
       const cap = p.purchasePrice;
@@ -46,15 +114,17 @@ const MODES = [
     icon: '⚡',
     name: 'Auto eléctrico',
     hasCapital: true,
-    params: {
-      // Fuente AE01: RappiCard / El Informador 2025
-      purchasePrice: { label: 'Precio de compra', value: 600000, unit: 'MXN', min: 200000, max: 2000000, step: 10000, isCurrency: true, tip: 'Precio del vehículo eléctrico. Promedio nacional auto eléctrico nuevo: ~$600,000 MXN. Fuente: El Informador / RappiCard 2025. El rango va desde ~$350k (BYD Dolphin, Ora) hasta más de $1.2M (Tesla Model 3/Y). El precio de compra más alto es la razón principal por la que el EV sale más caro a pocos km/año.' },
-      consumption:   { label: 'Consumo eléctrico', value: 16, unit: 'kWh/100km', min: 10, max: 30, step: 0.5, tip: 'Energía que consume el vehículo por cada 100 km. Promedio: ~16 kWh/100km. Autos compactos eléctricos (BYD, Ora): 13-17 kWh/100km. SUVs eléctricas: 18-25 kWh/100km. Lo encuentras en las especificaciones del fabricante o en la computadora de a bordo.' },
-      insurance:     { label: 'Seguro anual', value: 11000, unit: 'MXN/año', min: 0, max: 50000, step: 500, isCurrency: true, tip: 'Prima anual de seguro para vehículo eléctrico. Promedio estimado: ~$11,000 MXN/año. Suele ser ligeramente menor al auto de gasolina equivalente porque los EVs tienen menos partes móviles y menor riesgo de incendio por combustible. Sin embargo, la reparación de baterías puede encarecer las coberturas.' },
-      maintenance:   { label: 'Mantenimiento anual', value: 3000, unit: 'MXN/año', min: 0, max: 20000, step: 500, isCurrency: true, tip: 'Los autos eléctricos tienen costos de mantenimiento significativamente menores: sin cambios de aceite, menos desgaste en frenos (frenado regenerativo), sin bujías ni filtros de combustible. El costo principal es la revisión anual de sistema eléctrico y neumáticos. Promedio estimado: ~$3,000 MXN/año.' },
-      fees:          { label: 'Tenencia + trámites', value: 2500, unit: 'MXN/año', min: 0, max: 15000, step: 100, isCurrency: true, tip: 'En varios estados los vehículos eléctricos tienen exenciones o descuentos en tenencia y verificación como incentivo a la electromovilidad. Verifica el esquema de tu estado — en algunos casos este costo puede ser $0.' },
-      deprRate:      { label: 'Depreciación anual', value: 0.20, unit: '%', min: 0.05, max: 0.40, step: 0.01, isPct: true, tip: 'Los autos eléctricos deprecian más rápido que los de gasolina equivalentes por la incertidumbre sobre la vida útil de la batería y la rápida evolución tecnológica del segmento. Promedio estimado: ~20% anual. Una batería degradada puede reducir el valor de reventa drásticamente.' },
-    },
+    hasPresets: true,
+    kmEstimators: ['odometer', 'commute'],
+    defaultParams: { purchasePrice: 600000, consumption: 16, insurance: 11000, maintenance: 3000, fees: 2500, deprRate: 0.20 },
+    fields: [
+      { key: 'purchasePrice', label: 'Precio de compra', unit: 'MXN', isCurrency: true, tip: 'Precio del vehículo eléctrico. Rango: ~$350k (BYD Dolphin) hasta $1.2M+ (Tesla).' },
+      { key: 'consumption', label: 'Consumo eléctrico', unit: 'kWh/100km', step: 0.5, min: 10, max: 30, tip: 'Energía consumida por 100 km. Compactos: 13-17 kWh. SUVs: 18-25 kWh. Ver especificaciones del fabricante.' },
+      { key: 'insurance', label: 'Seguro anual', unit: 'MXN/año', isCurrency: true, tip: 'Seguros para EV son ligeramente menores que autos de gasolina equivalentes.' },
+      { key: 'maintenance', label: 'Mantenimiento anual', unit: 'MXN/año', isCurrency: true, tip: 'Sin cambios de aceite ni bujías. Principalmente revisión eléctrica y neumáticos. ~$3,000/año.' },
+      { key: 'fees', label: 'Tenencia + trámites', unit: 'MXN/año', isCurrency: true, tip: 'Varios estados tienen exenciones para EVs. Verifica en tu estado — puede ser $0.' },
+      { key: 'deprRate', label: 'Depreciación anual', unit: '%', isPct: true, step: 1, min: 5, max: 40, tip: 'EVs deprecian más rápido por incertidumbre en vida útil de batería y rápida evolución tecnológica. ~20%/año.' },
+    ],
     calc(p, km, gasPrice, cetes, elecPrice, oppOn) {
       const op = (km / 100) * p.consumption * elecPrice + p.insurance + p.maintenance + p.fees;
       const cap = p.purchasePrice;
@@ -69,13 +139,16 @@ const MODES = [
     icon: '🏍',
     name: 'Motocicleta',
     hasCapital: true,
-    params: {
-      purchasePrice:  { label: 'Precio de compra', value: 45000, unit: 'MXN', min: 10000, max: 300000, step: 1000, isCurrency: true, tip: 'Precio de compra de la motocicleta. El rango es muy amplio: motos de trabajo (Honda CB, Italika) desde $20-35k, motos deportivas o de marca desde $80k en adelante. Usa el precio que pagaste tú.' },
-      fuelEfficiency: { label: 'Rendimiento', value: 32, unit: 'km/litro', min: 15, max: 60, step: 1, tip: 'Kilómetros por litro de la moto. Las motos son significativamente más eficientes que los autos: motos de trabajo 35-50 km/l, motos deportivas 20-30 km/l, motos grandes/touring 15-20 km/l. Promedio estimado: ~32 km/l.' },
-      insurance:      { label: 'Seguro básico anual', value: 2500, unit: 'MXN/año', min: 0, max: 15000, step: 100, isCurrency: true, tip: 'Prima anual de seguro básico para motocicleta. Promedio estimado: ~$2,500 MXN/año para cobertura de responsabilidad civil. Muchos motociclistas circulan sin seguro, lo cual es un riesgo financiero significativo en caso de accidente.' },
-      maintenance:    { label: 'Mantenimiento anual', value: 3000, unit: 'MXN/año', min: 0, max: 15000, step: 100, isCurrency: true, tip: 'Mantenimiento anual de la moto: aceite, cadena, llantas, filtros, frenos. El mantenimiento es más frecuente que en autos pero más barato por servicio. Promedio estimado: ~$3,000 MXN/año con uso normal.' },
-      deprRate:       { label: 'Depreciación anual', value: 0.20, unit: '%', min: 0.05, max: 0.40, step: 0.01, isPct: true, tip: 'Las motocicletas deprecian rápido, especialmente en los primeros años. Motos populares de trabajo mantienen mejor su valor por alta demanda de reventa. Motos deportivas o de importación deprecian más. Promedio estimado: ~20% anual.' },
-    },
+    hasPresets: true,
+    kmEstimators: ['odometer', 'commute'],
+    defaultParams: { purchasePrice: 45000, fuelEfficiency: 32, insurance: 2500, maintenance: 3000, deprRate: 0.20 },
+    fields: [
+      { key: 'purchasePrice', label: 'Precio de compra', unit: 'MXN', isCurrency: true, tip: 'Motos de trabajo: $20-35k. Deportivas o de marca: $80k+.' },
+      { key: 'fuelEfficiency', label: 'Rendimiento', unit: 'km/litro', step: 1, min: 15, max: 60, tip: 'Motos de trabajo: 35-50 km/l. Deportivas: 20-30 km/l. Grandes/touring: 15-20 km/l.' },
+      { key: 'insurance', label: 'Seguro básico anual', unit: 'MXN/año', isCurrency: true, tip: 'Seguro básico de responsabilidad civil. Promedio: ~$2,500/año. Muchos motociclistas circulan sin seguro — riesgo financiero significativo.' },
+      { key: 'maintenance', label: 'Mantenimiento anual', unit: 'MXN/año', isCurrency: true, tip: 'Aceite, cadena, llantas, frenos. Más frecuente que autos pero más barato por servicio. ~$3,000/año.' },
+      { key: 'deprRate', label: 'Depreciación anual', unit: '%', isPct: true, step: 1, min: 5, max: 40, tip: 'Motos populares de trabajo mantienen mejor valor. Deportivas deprecian más rápido. ~20%/año.' },
+    ],
     calc(p, km, gasPrice, cetes, elecPrice, oppOn) {
       const op = (km / p.fuelEfficiency) * gasPrice + p.insurance + p.maintenance;
       const cap = p.purchasePrice;
@@ -90,12 +163,15 @@ const MODES = [
     icon: '🛴',
     name: 'Ebike / Scooter eléctrico',
     hasCapital: true,
-    params: {
-      purchasePrice: { label: 'Precio de compra', value: 20000, unit: 'MXN', min: 1000, max: 100000, step: 500, isCurrency: true, tip: 'Precio de compra de tu vehículo. Ebikes de entrada: ~$12,000–$20,000 MXN, de buena calidad: $30,000–$80,000+. Scooters eléctricos básicos: $8,000–$15,000. Modelos premium: $25,000–$60,000. Usa el precio que pagaste tú.' },
-      kmPerKwh:      { label: 'Eficiencia energética', value: 30, unit: 'km/kWh', min: 5, max: 80, step: 1, tip: 'Kilómetros recorridos por cada kWh consumido. Ebikes urbanas: ~30–50 km/kWh. Scooters ligeros: ~20–35 km/kWh. Scooters más pesados o rápidos: ~10–20 km/kWh. El costo se calcula automáticamente con la tarifa CFE que configuraste arriba.' },
-      maintenance:   { label: 'Mantenimiento anual', value: 1500, unit: 'MXN/año', min: 0, max: 8000, step: 100, isCurrency: true, tip: 'Mantenimiento anual: llantas, frenos, cadena (ebike), revisión eléctrica. Muy bajo comparado con vehículos de combustión. El gasto mayor a mediano plazo suele ser el reemplazo de batería (3–5 años de vida útil). Promedio estimado: ~$1,500 MXN/año.' },
-      deprRate:      { label: 'Depreciación anual', value: 0.18, unit: '%', min: 0.02, max: 0.40, step: 0.01, isPct: true, tip: 'Porcentaje del valor que se pierde por año. Ebikes y scooters eléctricos deprecian más que bicicletas mecánicas (~8%) por la degradación de la batería y la rápida evolución del mercado. Promedio estimado: ~18% anual.' },
-    },
+    hasPresets: false,
+    kmEstimators: ['commute'],
+    defaultParams: { purchasePrice: 20000, kmPerKwh: 30, maintenance: 1500, deprRate: 0.18 },
+    fields: [
+      { key: 'purchasePrice', label: 'Precio de compra', unit: 'MXN', isCurrency: true, tip: 'Ebikes de entrada: $12-20k. Buena calidad: $30-80k+. Scooters eléctricos: $8-60k.' },
+      { key: 'kmPerKwh', label: 'Eficiencia energética', unit: 'km/kWh', step: 1, min: 5, max: 80, tip: 'Ebikes urbanas: 30-50 km/kWh. Scooters ligeros: 20-35 km/kWh. Scooters pesados: 10-20 km/kWh.' },
+      { key: 'maintenance', label: 'Mantenimiento anual', unit: 'MXN/año', isCurrency: true, tip: 'Llantas, frenos, cadena, revisión eléctrica. ~$1,500/año. El gasto mayor a mediano plazo: reemplazo de batería (3-5 años).' },
+      { key: 'deprRate', label: 'Depreciación anual', unit: '%', isPct: true, step: 1, min: 2, max: 40, tip: 'Deprecian más que bicicletas mecánicas por degradación de batería. ~18%/año.' },
+    ],
     calc(p, km, gasPrice, cetes, elecPrice, oppOn) {
       const op = (km / p.kmPerKwh) * elecPrice + p.maintenance;
       const cap = p.purchasePrice;
@@ -110,11 +186,14 @@ const MODES = [
     icon: '🚲',
     name: 'Bicicleta',
     hasCapital: true,
-    params: {
-      purchasePrice: { label: 'Precio de compra', value: 8000, unit: 'MXN', min: 1000, max: 80000, step: 500, isCurrency: true, tip: 'Precio de compra de la bicicleta. El rango es enorme: bici básica de uso urbano $1,500-4,000 MXN, bici de buena calidad $5,000-15,000 MXN, bici de carbono o eléctrica $20,000+. El default asume una bici urbana de buena calidad.' },
-      maintenance:   { label: 'Mantenimiento anual', value: 2000, unit: 'MXN/año', min: 0, max: 10000, step: 100, isCurrency: true, tip: 'Mantenimiento anual de la bicicleta: llantas, cadena, cables, frenos, ajustes. Para un ciclista urbano con uso diario, ~$2,000 MXN/año es una estimación conservadora. Incluye eventuales reparaciones por ponchaduras y desgaste normal.' },
-      deprRate:      { label: 'Depreciación anual', value: 0.08, unit: '%', min: 0.02, max: 0.25, step: 0.01, isPct: true, tip: 'Las bicicletas deprecian mucho menos que los vehículos motorizados, especialmente las de buena marca. Una bici bien mantenida puede conservar el 70-80% de su valor por años. Promedio estimado: ~8% anual.' },
-    },
+    hasPresets: false,
+    kmEstimators: ['commute'],
+    defaultParams: { purchasePrice: 8000, maintenance: 2000, deprRate: 0.08 },
+    fields: [
+      { key: 'purchasePrice', label: 'Precio de compra', unit: 'MXN', isCurrency: true, tip: 'Bici básica urbana: $1,500-4,000. Buena calidad: $5,000-15,000. Carbono o eléctrica: $20,000+.' },
+      { key: 'maintenance', label: 'Mantenimiento anual', unit: 'MXN/año', isCurrency: true, tip: 'Llantas, cadena, cables, frenos, ajustes. Para uso urbano diario: ~$2,000/año.' },
+      { key: 'deprRate', label: 'Depreciación anual', unit: '%', isPct: true, step: 1, min: 2, max: 25, tip: 'Las bicis deprecian mucho menos que vehículos motorizados. Una bien mantenida conserva el 70-80% de su valor por años. ~8%/año.' },
+    ],
     calc(p, km, gasPrice, cetes, elecPrice, oppOn) {
       const op = p.maintenance;
       const cap = p.purchasePrice;
@@ -129,11 +208,13 @@ const MODES = [
     icon: '🚌',
     name: 'Transporte público',
     hasCapital: false,
-    params: {
-      // Fuente TP01: Ciudadanos Observando — promedio 26 ciudades MX excl. CDMX
-      farePerTrip:   { label: 'Tarifa por viaje', value: 12.00, unit: 'MXN/viaje', min: 3, max: 30, step: 0.50, tip: 'Tarifa promedio por viaje en transporte público. Promedio nacional (excluyendo CDMX): ~$12 MXN. CDMX es un caso especial subsidiado ($5-7.50). Monterrey: ~$17. Guadalajara: ~$11. Fuente: Ciudadanos Observando, comparativo 26 ciudades 2025. Usa la tarifa de tu ciudad.' },
-      tripsPerMonth: { label: 'Viajes al mes', value: 44, unit: 'viajes/mes', min: 10, max: 120, step: 2, tip: 'Número de viajes en transporte público por mes. 44 viajes/mes equivale a ~2 viajes por día hábil (ida y vuelta al trabajo). Si usas transporte público también fines de semana o para múltiples destinos, aumenta este número.' },
-    },
+    hasPresets: false,
+    kmEstimators: ['commute'],
+    defaultParams: { farePerTrip: 12.00, tripsPerMonth: 44 },
+    fields: [
+      { key: 'farePerTrip', label: 'Tarifa por viaje', unit: 'MXN/viaje', step: 0.5, min: 3, max: 30, tip: 'Promedio nacional (excluyendo CDMX): ~$12. CDMX: $5-7.50. Monterrey: ~$17. Guadalajara: ~$11. Fuente: Ciudadanos Observando, 26 ciudades 2025.' },
+      { key: 'tripsPerMonth', label: 'Viajes al mes', unit: 'viajes/mes', step: 2, min: 10, max: 120, tip: '44 viajes/mes = 2 viajes por día hábil (ida y vuelta). Ajusta si usas transporte también fines de semana.' },
+    ],
     calc(p, km, gasPrice, cetes, elecPrice, oppOn) {
       const op = p.farePerTrip * p.tripsPerMonth * 12;
       return { op, depr: 0, opp: 0, cap: 0, residual: 0 };
@@ -144,12 +225,14 @@ const MODES = [
     icon: '🚕',
     name: 'Uber / Didi',
     hasCapital: false,
-    params: {
-      // Fuente U01: post-reforma laboral julio 2025
-      costPerKm:  { label: 'Tarifa por km', value: 8.00, unit: 'MXN/km', min: 3, max: 25, step: 0.50, tip: 'Costo por kilómetro en Uber/Didi. Varía según ciudad, hora del día y demanda. Estimado post-reforma laboral julio 2025 que incrementó costos operativos. Ciudad de México y Monterrey suelen ser más caros. En ciudades medianas puede ser menor.' },
-      baseFare:   { label: 'Tarifa base por viaje', value: 12.00, unit: 'MXN/viaje', min: 5, max: 50, step: 1, tip: 'Cargo fijo por viaje, independiente de la distancia. Se aplica al inicio de cada trayecto y cubre el tiempo de espera y los primeros kilómetros. Varía por ciudad y plataforma.' },
-      avgTripKm:  { label: 'Km por viaje promedio', value: 8, unit: 'km/viaje', min: 2, max: 30, step: 1, tip: 'Distancia promedio de cada viaje que tomas en Uber o Didi. Afecta el número de viajes necesarios para cubrir tus kilómetros anuales. Un viaje urbano típico en ciudades mexicanas es de 6-12 km.' },
-    },
+    hasPresets: false,
+    kmEstimators: ['commute'],
+    defaultParams: { costPerKm: 8.00, baseFare: 12.00, avgTripKm: 8 },
+    fields: [
+      { key: 'costPerKm', label: 'Tarifa por km', unit: 'MXN/km', step: 0.5, min: 3, max: 25, tip: 'Varía por ciudad y demanda. Estimado post-reforma laboral julio 2025.' },
+      { key: 'baseFare', label: 'Tarifa base por viaje', unit: 'MXN/viaje', step: 1, min: 5, max: 50, tip: 'Cargo fijo por viaje independiente de la distancia.' },
+      { key: 'avgTripKm', label: 'Km promedio por viaje', unit: 'km/viaje', step: 1, min: 2, max: 30, tip: 'Distancia típica de cada trayecto. Viaje urbano MX: 6-12 km.' },
+    ],
     calc(p, km, gasPrice, cetes, elecPrice, oppOn) {
       const trips = km / p.avgTripKm;
       const op = p.costPerKm * km + p.baseFare * trips;
@@ -168,26 +251,79 @@ const BAR_COLORS = {
   uber:    '#FB923C',
 };
 
-// ── State ──────────────────────────────────────────────────────────────────
-const state = {
-  km:        DEFAULT_KM,
-  gasPrice:  DEFAULT_GAS_PRICE,
-  elecPrice: DEFAULT_ELEC_PRICE,
-  cetes:     DEFAULT_CETES,
-  oppOn:     true,
-  inflOn:    false,
-  inflRate:  DEFAULT_INFL_RATE,
-  params:    {}
+// ── KEY PARAMS per mode — the 1-2 most impactful fields shown on alt cards ─
+const KEY_PARAMS = {
+  car:     ['purchasePrice', 'fuelEfficiency'],
+  ev:      ['purchasePrice', 'consumption'],
+  moto:    ['purchasePrice', 'fuelEfficiency'],
+  scooter: ['purchasePrice', 'kmPerKwh'],
+  bike:    ['purchasePrice'],
+  transit: ['farePerTrip', 'tripsPerMonth'],
+  uber:    ['costPerKm', 'avgTripKm'],
 };
+
+// ── PRESET MATCH TABLE — maps selected preset tier → alt mode default preset
+// Keys: selected mode preset id. Values: { modeId: presetId }
+// Modes without presets just use their default params (no entry needed).
+const PRESET_MATCH = {
+  'car-compact': { ev: 'ev-compact', moto: 'moto-urban' },
+  'car-sedan':   { ev: 'ev-compact', moto: 'moto-urban' },
+  'car-suv':     { ev: 'ev-suv',     moto: 'moto-sport' },
+  'car-truck':   { ev: 'ev-suv',     moto: 'moto-sport' },
+  'ev-compact':  { car: 'car-compact' },
+  'ev-suv':      { car: 'car-suv' },
+  'moto-urban':  { car: 'car-compact' },
+  'moto-sport':  { car: 'car-sedan' },
+};
+
+// Apply matched presets to alt modes when user confirms step 2
+function applyMatchedPresets() {
+  const selectedPreset = state.activePreset;
+  if (!selectedPreset) return;
+  const matches = PRESET_MATCH[selectedPreset] || {};
+  Object.entries(matches).forEach(([modeId, presetId]) => {
+    const modePresets = PRESETS[modeId];
+    if (!modePresets) return;
+    const preset = modePresets.find(p => p.id === presetId);
+    if (!preset) return;
+    const condition = state.presetCondition || 'new';
+    const vals = preset[condition] || preset.new;
+    Object.entries(vals).forEach(([k, v]) => {
+      state.params[modeId][k] = v;
+    });
+    // Track which preset is active for display on alt cards
+    if (!state.altPresets) state.altPresets = {};
+    state.altPresets[modeId] = { presetId, condition };
+  });
+}
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+const state = {
+  step: 1,
+  selectedMode: null,
+  km: DEFAULT_KM,
+  gasPrice: DEFAULT_GAS_PRICE,
+  elecPrice: DEFAULT_ELEC_PRICE,
+  cetes: DEFAULT_CETES,
+  oppOn: true,
+  params: {},
+  costPeriod: 'year',
+  openMixId: null,       // unused, kept for forward compat
+  mixRatio: 0.5,
+  // standalone mix mode row
+  freeMix: { modeA: 'transit', modeB: 'uber', ratio: 0.5, open: false },
+  altPresets: {},        // { modeId: { presetId, condition } } — applied by matching
+  altEditing: null,      // modeId whose key-param mini-edit is open on an alt card
+};
+
+// Initialize params for all modes from defaults
 MODES.forEach(m => {
-  state.params[m.id] = {};
-  Object.entries(m.params).forEach(([k, v]) => { state.params[m.id][k] = v.value; });
+  state.params[m.id] = { ...m.defaultParams };
 });
 
-// ── Helpers ────────────────────────────────────────────────────────────────
-const fmt    = n => new Intl.NumberFormat('es-MX', { style:'currency', currency:'MXN', maximumFractionDigits:0 }).format(n);
+// ── HELPERS ────────────────────────────────────────────────────────────────
+const fmt    = n => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(n);
 const fmtKm  = n => new Intl.NumberFormat('es-MX').format(n);
-const fmtNum = n => new Intl.NumberFormat('es-MX').format(n);
 const pct    = n => (n * 100).toFixed(1) + '%';
 
 function formatCurrencyInput(val) {
@@ -195,502 +331,708 @@ function formatCurrencyInput(val) {
   if (isNaN(num)) return '';
   return new Intl.NumberFormat('es-MX', { maximumFractionDigits: 0 }).format(num);
 }
-function parseCurrencyInput(str) {
-  return parseFloat(str.replace(/,/g, '').replace(/\./g, '')) || 0;
+
+function calcMode(modeId, km) {
+  const mode = MODES.find(m => m.id === modeId);
+  const p = state.params[modeId];
+  const r = mode.calc(p, km, state.gasPrice, state.cetes, state.elecPrice, state.oppOn);
+  const total = r.op + r.depr + r.opp;
+  return { ...r, total, perKm: km > 0 ? total / km : 0, perMonth: total / 12 };
 }
 
-function computeAll() {
-  return MODES.map(m => {
-    const p = state.params[m.id];
-    let effectiveParams = p;
-    if (state.inflOn && p.deprRate !== undefined) {
-      const realDepr = Math.max(0, p.deprRate - state.inflRate);
-      effectiveParams = { ...p, deprRate: realDepr };
-    }
-    const r = m.calc(effectiveParams, state.km, state.gasPrice, state.cetes, state.elecPrice, state.oppOn);
-    const total = r.op + r.depr + r.opp;
-    return { ...m, result: r, total, perKm: total / state.km, perMonth: total / 12 };
-  });
+function formatPeriod(annual, period) {
+  switch (period) {
+    case 'day':   return fmt(annual / 365);
+    case 'week':  return fmt(annual / 52);
+    case 'month': return fmt(annual / 12);
+    default:      return fmt(annual);
+  }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// RENDER
-// ═══════════════════════════════════════════════════════════════════════════
+function periodLabel(period) {
+  switch (period) {
+    case 'day':   return 'al día';
+    case 'week':  return 'a la semana';
+    case 'month': return 'al mes';
+    default:      return 'al año';
+  }
+}
 
-function renderChart(data) {
-  const sorted = [...data].sort((a, b) => a.total - b.total);
-  const max    = sorted[sorted.length - 1].total;
-  const el     = document.getElementById('chart-container');
-  el.innerHTML = '';
+function scrollToStep(stepEl) {
+  if (!stepEl) return;
+  setTimeout(() => {
+    const y = stepEl.getBoundingClientRect().top + window.scrollY - 80;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  }, 80);
+}
 
-  sorted.forEach((d, i) => {
-    const barPct = (d.total / max) * 100;
-    const isMin  = i === 0;
-    const isMax  = i === sorted.length - 1;
-    const inside = barPct > 32;
-    const color  = BAR_COLORS[d.id];
-
-    const row = document.createElement('div');
-    row.className = 'chart-row' + (isMin ? ' best' : isMax ? ' worst' : '');
-    row.innerHTML = `
-      <div class="mode-label">
-        <span class="mode-icon">${d.icon}</span>
-        <span>${d.name}</span>
-      </div>
-      <div class="bar-wrapper">
-        <div class="bar-fill" style="width:${barPct}%;background:${color}">
-          ${inside ? `<span class="bar-label">${fmt(d.perKm)}/km</span>` : ''}
-        </div>
-        ${!inside ? `<span style="position:absolute;left:calc(${barPct}% + 6px);top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:11px;font-weight:600;color:${color};white-space:nowrap">${fmt(d.perKm)}/km</span>` : ''}
-      </div>
-      <div class="mode-total">${fmt(d.total)}/año</div>
-      <span class="badge ${isMin ? 'best' : isMax ? 'worst' : 'empty'}">${isMin ? '✓ Más barato' : isMax ? '✗ Más caro' : ''}</span>
+// ── STEP 1: MODE SELECTION ─────────────────────────────────────────────────
+function renderStep1() {
+  const container = document.getElementById('step1-modes');
+  container.innerHTML = '';
+  MODES.forEach(mode => {
+    const card = document.createElement('button');
+    card.className = 'mode-card' + (state.selectedMode === mode.id ? ' selected' : '');
+    card.dataset.id = mode.id;
+    card.innerHTML = `
+      <span class="mode-card-icon">${mode.icon}</span>
+      <span class="mode-card-name">${mode.name}</span>
     `;
-    el.appendChild(row);
+    card.addEventListener('click', () => selectMode(mode.id));
+    container.appendChild(card);
   });
 }
 
-function renderInsight(data) {
-  const sorted     = [...data].sort((a, b) => a.total - b.total);
-  const cheapest   = sorted[0];
-  const expensive  = sorted[sorted.length - 1];
-  const car        = data.find(d => d.id === 'car');
-  const transit    = data.find(d => d.id === 'transit');
-  const diff       = expensive.total - cheapest.total;
-  const oppCar     = car.result.opp;
-  const transitYrs = (car.total / transit.total).toFixed(1);
+function selectMode(id) {
+  state.selectedMode = id;
+  renderStep1();
 
-  const evBreakeven = (() => {
-    const evM  = MODES.find(m => m.id === 'ev');
-    const carM = MODES.find(m => m.id === 'car');
-    for (let k = 5000; k <= 60000; k += 500) {
-      const evR  = evM.calc(state.params['ev'],  k, state.gasPrice, state.cetes, state.elecPrice, state.oppOn);
-      const carR = carM.calc(state.params['car'], k, state.gasPrice, state.cetes, state.elecPrice, state.oppOn);
-      if ((evR.op + evR.depr + evR.opp) <= (carR.op + carR.depr + carR.opp)) return k;
-    }
-    return null;
-  })();
+  // Reveal step 2
+  const step2 = document.getElementById('step2');
+  const wasHidden = step2.classList.contains('step-hidden');
+  step2.classList.remove('step-hidden');
+  step2.classList.add('step-visible');
+  renderStep2();
+  if (wasHidden) scrollToStep(step2);
 
-  let text = `A <strong>${fmtKm(state.km)} km/año</strong>, tu modo más caro —
-    <strong>${expensive.name}</strong> — genera un egreso de
-    <strong>${fmt(expensive.total)}/año</strong> (${fmt(expensive.perKm)}/km),
-    es decir <strong>${fmt(diff)} más</strong> que la alternativa más económica. `;
-
-  if (state.oppOn && oppCar > 0) {
-    text += `De ese total, <strong>${fmt(oppCar)}</strong> corresponde al costo de oportunidad:
-      capital que permanece inmovilizado en lugar de generar el ${pct(state.cetes)} anual
-      que ofrecen los CETES. `;
-  }
-
-  text += `El presupuesto anual de un auto cubre <strong>${transitYrs} años</strong> de transporte público.`;
-
-  if (evBreakeven) {
-    text += ` El auto eléctrico se vuelve más económico que el de gasolina a partir de
-      <strong>${fmtKm(evBreakeven)} km/año</strong> — el punto de quiebre donde el ahorro en combustible
-      supera la diferencia en capital y depreciación.`;
-  }
-
-  if (state.inflOn) {
-    text += ` <span style="color:#F4A642">Con inflación al ${pct(state.inflRate)}, la depreciación real de los vehículos es menor en términos de poder adquisitivo — parte de la pérdida nominal queda absorbida por el alza general de precios.</span>`;
-  }
-
-  document.getElementById('insight-text').innerHTML = text;
+  // Hide steps 3+ if mode changes
+  hideStepsFrom(3);
 }
 
-function renderTable(data) {
-  const tbody  = document.getElementById('breakdown-body');
-  tbody.innerHTML = '';
-  const sorted = [...data].sort((a, b) => a.total - b.total);
+// ── STEP 2: VEHICLE DETAILS ────────────────────────────────────────────────
+function renderStep2() {
+  const mode = MODES.find(m => m.id === state.selectedMode);
+  if (!mode) return;
 
-  const oppHdr = document.getElementById('opp-header');
-  oppHdr.textContent = 'Oportunidad';
-  oppHdr.style.color   = state.oppOn ? 'var(--blue)' : 'var(--muted)';
-  oppHdr.style.opacity = state.oppOn ? '1' : '0.4';
+  document.getElementById('step2-icon').textContent = mode.icon;
+  document.getElementById('step2-modename').textContent = mode.name;
 
-  const deprHdr = document.getElementById('depr-header');
-  if (deprHdr) {
-    deprHdr.textContent = state.inflOn ? `Depreciación real (−${pct(state.inflRate)})` : 'Depreciación';
-    deprHdr.style.color = state.inflOn ? '#F4A642' : 'var(--muted2)';
+  const presetsEl = document.getElementById('step2-presets');
+  const presetsSection = document.getElementById('step2-presets-section');
+
+  if (mode.hasPresets && PRESETS[mode.id]) {
+    presetsSection.style.display = '';
+    renderPresets(mode);
+  } else {
+    presetsSection.style.display = 'none';
   }
 
-  sorted.forEach(d => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${d.icon} ${d.name}</td>
-      <td>${fmt(d.result.op)}</td>
-      <td class="depr-col" style="${state.inflOn ? 'color:#F4A642' : ''}">${d.result.depr > 0 ? fmt(d.result.depr) : '—'}</td>
-      <td class="opp-col" style="${!state.oppOn ? 'opacity:0.3' : ''}">${d.result.opp > 0 ? fmt(d.result.opp) : '—'}</td>
-      <td class="total-col">${fmt(d.total)}</td>
-      <td class="perkm-col">${fmt(d.perKm)}</td>
-      <td>${fmt(d.perMonth)}</td>
-      <td style="color:var(--muted)">${d.result.cap > 0 ? fmt(d.result.cap) : '—'}</td>
+  renderFields(mode);
+}
+
+function renderPresets(mode) {
+  const presetsEl = document.getElementById('step2-presets');
+  presetsEl.innerHTML = '';
+
+  // New/Used toggle
+  const toggleWrap = document.createElement('div');
+  toggleWrap.className = 'preset-condition-row';
+  toggleWrap.innerHTML = `
+    <span class="preset-condition-label">¿Como lo adquiriste?</span>
+    <div class="preset-condition-toggle">
+      <button class="condition-btn ${state.presetCondition !== 'used' ? 'active' : ''}" data-val="new">Nuevo</button>
+      <button class="condition-btn ${state.presetCondition === 'used' ? 'active' : ''}" data-val="used">Usado</button>
+    </div>
+  `;
+  toggleWrap.querySelectorAll('.condition-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.presetCondition = btn.dataset.val;
+      renderPresets(mode);
+      renderFields(mode);
+    });
+  });
+  presetsEl.appendChild(toggleWrap);
+
+  // Preset cards
+  const grid = document.createElement('div');
+  grid.className = 'presets-grid';
+
+  PRESETS[mode.id].forEach(preset => {
+    const card = document.createElement('button');
+    card.className = 'preset-card' + (state.activePreset === preset.id ? ' selected' : '');
+    card.innerHTML = `
+      <span class="preset-card-icon">${preset.icon}</span>
+      <span class="preset-card-label">${preset.label}</span>
+      <span class="preset-card-examples">${preset.examples}</span>
     `;
-    tbody.appendChild(tr);
+    card.addEventListener('click', () => {
+      state.activePreset = preset.id;
+      const condition = state.presetCondition === 'used' ? 'used' : 'new';
+      const vals = preset[condition];
+      Object.entries(vals).forEach(([k, v]) => {
+        state.params[mode.id][k] = v;
+      });
+      renderPresets(mode);
+      renderFields(mode);
+    });
+    grid.appendChild(card);
   });
+
+  presetsEl.appendChild(grid);
 }
 
-function buildFieldHTML(mode, key, param) {
-  const rawVal = state.params[mode.id][key];
-  const tipHTML = param.tip ? `<span class="tt" data-tip="${param.tip.replace(/"/g, '&quot;')}">?</span>` : '';
+function renderFields(mode) {
+  const container = document.getElementById('step2-fields');
+  container.innerHTML = '';
 
-  if (param.isPct) {
-    return `
-      <div class="field">
-        <label>${param.label} ${tipHTML}</label>
-        <input class="plain-input" type="number"
-          data-mode="${mode.id}" data-param="${key}" data-ispct="1"
-          value="${(rawVal * 100).toFixed(0)}"
-          step="1" min="${param.min*100}" max="${param.max*100}">
-        <span class="field-unit">${param.unit}</span>
-      </div>`;
-  }
+  mode.fields.forEach(field => {
+    const val = state.params[mode.id][field.key];
+    const div = document.createElement('div');
+    div.className = 'detail-field';
 
-  if (param.isCurrency) {
-    return `
-      <div class="field">
-        <label>${param.label} ${tipHTML}</label>
+    const tipHTML = field.tip
+      ? `<span class="tt" data-tip="${field.tip.replace(/"/g, '&quot;')}">?</span>`
+      : '';
+
+    let inputHTML = '';
+    if (field.isCurrency) {
+      inputHTML = `
         <div class="currency-wrap">
           <span class="currency-prefix">$</span>
-          <input type="text"
-            data-mode="${mode.id}" data-param="${key}" data-iscurrency="1"
-            value="${formatCurrencyInput(rawVal)}"
-            inputmode="numeric">
-        </div>
-        <span class="field-unit">${param.unit}</span>
-      </div>`;
-  }
+          <input type="text" class="field-input" data-key="${field.key}"
+            data-iscurrency="1" value="${formatCurrencyInput(val)}" inputmode="numeric">
+        </div>`;
+    } else if (field.isPct) {
+      inputHTML = `
+        <div class="plain-input-wrap">
+          <input type="number" class="field-input" data-key="${field.key}"
+            data-ispct="1" value="${(val * 100).toFixed(0)}"
+            step="${field.step || 1}" min="${(field.min || 0)}" max="${(field.max || 100)}">
+          <span class="field-suffix">%</span>
+        </div>`;
+    } else {
+      inputHTML = `
+        <div class="plain-input-wrap">
+          <input type="number" class="field-input" data-key="${field.key}"
+            value="${val}" step="${field.step || 1}"
+            min="${field.min || 0}" max="${field.max || 99999}">
+          <span class="field-suffix">${field.unit}</span>
+        </div>`;
+    }
 
-  return `
-    <div class="field">
-      <label>${param.label} ${tipHTML}</label>
-      <input class="plain-input" type="number"
-        data-mode="${mode.id}" data-param="${key}"
-        value="${rawVal}"
-        step="${param.step}" min="${param.min}" max="${param.max}">
-      <span class="field-unit">${param.unit}</span>
-    </div>`;
-}
-
-function renderPanels() {
-  const container = document.getElementById('mode-panels');
-  container.innerHTML = '';
-  const allData = computeAll();
-
-  MODES.forEach(mode => {
-    const d     = allData.find(x => x.id === mode.id);
-    const panel = document.createElement('div');
-    panel.className = 'mode-panel';
-
-    const fieldsHTML = Object.entries(mode.params)
-      .map(([k, p]) => buildFieldHTML(mode, k, p))
-      .join('');
-
-    const odoHTML = mode.id === 'car' ? `
-      <div class="odometer-helper">
-        <strong>📍 Calcula tus kilómetros reales</strong>
-        <p>Divide el odómetro actual entre los años que llevas con el vehículo para obtener tu promedio anual real.</p>
-        <div class="oh-fields">
-          <input type="number" id="oh-odo" placeholder="Odómetro (km)" min="0" max="999999">
-          <input type="number" id="oh-years" placeholder="Años de uso" min="1" max="30">
-        </div>
-        <div class="oh-result" id="oh-result">—</div>
-      </div>` : '';
-
-    panel.innerHTML = `
-      <div class="panel-header" data-id="${mode.id}">
-        <div class="panel-title">
-          <span>${mode.icon}</span>
-          <span>${mode.name}</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:6px">
-          <span class="panel-subtitle" id="psub-${mode.id}">${fmt(d.perKm)}/km</span>
-          <span class="panel-chevron" id="chevron-${mode.id}">▼</span>
-        </div>
-      </div>
-      <div class="panel-body" id="body-${mode.id}">
-        ${fieldsHTML}
-        ${odoHTML}
-      </div>
+    div.innerHTML = `
+      <div class="detail-field-label">${field.label} ${tipHTML}</div>
+      <div class="detail-field-input">${inputHTML}</div>
     `;
-    container.appendChild(panel);
+    container.appendChild(div);
   });
 
-  // Panel toggle
-  container.querySelectorAll('.panel-header').forEach(hdr => {
-    hdr.addEventListener('click', () => {
-      const id      = hdr.dataset.id;
-      const body    = document.getElementById(`body-${id}`);
-      const chevron = document.getElementById(`chevron-${id}`);
-      const open    = body.classList.toggle('open');
-      hdr.classList.toggle('open', open);
-      chevron.classList.toggle('open', open);
-    });
-  });
-
-  // Plain numeric inputs
-  container.querySelectorAll('input.plain-input[data-mode]').forEach(inp => {
+  // Wire up field inputs
+  container.querySelectorAll('input.field-input').forEach(inp => {
     inp.addEventListener('input', () => {
-      const { mode, param } = inp.dataset;
-      const isPct = !!inp.dataset.ispct;
-      const val   = parseFloat(inp.value);
-      if (!isNaN(val)) {
-        state.params[mode][param] = isPct ? val / 100 : val;
-        update();
+      const key = inp.dataset.key;
+      if (inp.dataset.iscurrency) {
+        const val = parseFloat(inp.value.replace(/,/g, '')) || 0;
+        state.params[mode.id][key] = val;
+      } else if (inp.dataset.ispct) {
+        const val = parseFloat(inp.value) / 100;
+        if (!isNaN(val)) state.params[mode.id][key] = val;
+      } else {
+        const val = parseFloat(inp.value);
+        if (!isNaN(val)) state.params[mode.id][key] = val;
       }
+      if (state.step >= 4) rerenderResults();
     });
-  });
-
-  // Currency text inputs
-  container.querySelectorAll('input[data-iscurrency]').forEach(inp => {
-    inp.addEventListener('input', () => {
-      const raw = inp.value.replace(/,/g, '');
-      const val = parseFloat(raw);
-      if (!isNaN(val)) {
-        state.params[inp.dataset.mode][inp.dataset.param] = val;
-        update();
-      }
-    });
-    inp.addEventListener('blur', () => {
-      inp.value = formatCurrencyInput(state.params[inp.dataset.mode][inp.dataset.param]);
-    });
-    inp.addEventListener('focus', () => {
-      inp.value = state.params[inp.dataset.mode][inp.dataset.param];
-    });
-  });
-
-  // Odometer helper (in car panel)
-  const odo = document.getElementById('oh-odo');
-  const yrs = document.getElementById('oh-years');
-  const res = document.getElementById('oh-result');
-  if (odo && yrs && res) {
-    [odo, yrs].forEach(el => {
-      el.addEventListener('input', () => {
-        const o = parseFloat(odo.value);
-        const y = parseFloat(yrs.value);
-        if (!isNaN(o) && !isNaN(y) && y > 0) {
-          const kmAnual = Math.round(o / y);
-          res.textContent = `→ ${fmtKm(kmAnual)} km/año — haz clic para aplicar`;
-          res.style.cursor = 'pointer';
-          res.onclick = () => {
-            state.km = kmAnual;
-            document.getElementById('km-slider').value = Math.min(Math.max(kmAnual, 2000), 75000);
-            document.getElementById('km-display').textContent = fmtKm(kmAnual) + ' km';
-            update();
-          };
-        } else {
-          res.textContent = '—';
-          res.style.cursor = 'default';
-        }
+    if (inp.dataset.iscurrency) {
+      inp.addEventListener('blur', () => {
+        inp.value = formatCurrencyInput(state.params[mode.id][inp.dataset.key]);
       });
-    });
-  }
-}
-
-function update() {
-  const data = computeAll();
-  renderChart(data);
-  renderInsight(data);
-  renderTable(data);
-  MODES.forEach(m => {
-    const sub = document.getElementById(`psub-${m.id}`);
-    if (sub) sub.textContent = fmt(computeAll().find(x => x.id === m.id).perKm) + '/km';
+      inp.addEventListener('focus', () => {
+        inp.value = state.params[mode.id][inp.dataset.key] || '';
+      });
+    }
   });
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// KM ESTIMATOR DIALOG
-// ═══════════════════════════════════════════════════════════════════════════
-
-let kmeActivityMultiplier = 1.50;
-let kmeCurrentTab = 'car';
-let kmeCurrentValue = null;
-
-function toggleKmEstimator() {
-  const backdrop = document.getElementById('kme-backdrop');
-  const isOpen   = backdrop.classList.toggle('open');
-  document.body.style.overflow = isOpen ? 'hidden' : '';
-  if (isOpen) {
-    setTimeout(() => {
-      const firstInput = document.querySelector('.kme-panel.active input');
-      if (firstInput) firstInput.focus();
-    }, 50);
-  }
+// Confirm step 2 → reveal step 3
+function confirmStep2() {
+  applyMatchedPresets();
+  const step3 = document.getElementById('step3');
+  const wasHidden = step3.classList.contains('step-hidden');
+  step3.classList.remove('step-hidden');
+  step3.classList.add('step-visible');
+  state.step = Math.max(state.step, 3);
+  renderStep3();
+  if (wasHidden) scrollToStep(step3);
+  hideStepsFrom(4);
 }
 
-function handleBackdropClick(e) {
-  if (e.target === document.getElementById('kme-backdrop')) toggleKmEstimator();
-}
+// ── STEP 3: DISTANCE ───────────────────────────────────────────────────────
+function renderStep3() {
+  const mode = MODES.find(m => m.id === state.selectedMode);
+  if (!mode) return;
 
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && document.getElementById('kme-backdrop').classList.contains('open')) {
-    toggleKmEstimator();
-  }
-});
-
-function switchKmeTab(tab) {
-  kmeCurrentTab = tab;
-  document.getElementById('tab-car').classList.toggle('active', tab === 'car');
-  document.getElementById('tab-other').classList.toggle('active', tab === 'other');
-  document.getElementById('kme-panel-car').classList.toggle('active', tab === 'car');
-  document.getElementById('kme-panel-other').classList.toggle('active', tab === 'other');
-  tab === 'car' ? calcKmeCar() : calcKmeOther();
-}
-
-function updateKmeResult(value) {
-  kmeCurrentValue = value;
-  const display  = document.getElementById('kme-result-display');
-  const applyBtn = document.getElementById('kme-apply-btn');
-  display.textContent = value !== null ? fmtKm(value) + ' km/año' : '— km/año';
-  applyBtn.disabled   = value === null;
-}
-
-function calcKmeCar() {
-  const odo   = parseFloat(document.getElementById('kme-odo').value);
-  const years = parseFloat(document.getElementById('kme-years').value);
-  ((!isNaN(odo) && !isNaN(years) && years > 0 && odo > 0))
-    ? updateKmeResult(Math.round(odo / years))
-    : updateKmeResult(null);
-}
-
-function setActivity(level) {
-  const map = { low: 1.20, med: 1.50, high: 2.00 };
-  kmeActivityMultiplier = map[level];
-  ['low', 'med', 'high'].forEach(l =>
-    document.getElementById(`act-${l}`).classList.toggle('active', l === level)
-  );
-  calcKmeOther();
-}
-
-function calcKmeOther() {
-  const commute = parseFloat(document.getElementById('kme-commute').value);
-  const days    = parseFloat(document.getElementById('kme-days').value);
-  (!isNaN(commute) && !isNaN(days) && commute > 0 && days > 0)
-    ? updateKmeResult(Math.round(commute * 2 * days * 50 * kmeActivityMultiplier))
-    : updateKmeResult(null);
-}
-
-function applyKme() {
-  if (kmeCurrentValue === null) return;
-  const clamped = Math.min(Math.max(kmeCurrentValue, 2000), 75000);
-  state.km = clamped;
-  document.getElementById('km-slider').value        = clamped;
-  document.getElementById('km-display').textContent = fmtKm(clamped) + ' km';
-  update();
-  toggleKmEstimator();
-  const display = document.getElementById('km-display');
-  display.style.transition = 'color 0.15s';
-  display.style.color = '#fff';
-  setTimeout(() => { display.style.color = ''; }, 700);
-}
-
-function resetKmeUI() {
-  document.getElementById('kme-backdrop').classList.remove('open');
-  document.body.style.overflow = '';
-  ['kme-odo', 'kme-years', 'kme-commute', 'kme-days'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
-  kmeActivityMultiplier = 1.50;
-  kmeCurrentValue = null;
-  ['low', 'med', 'high'].forEach(l =>
-    document.getElementById(`act-${l}`).classList.toggle('active', l === 'med')
-  );
-  updateKmeResult(null);
-  switchKmeTab('car');
-}
-
-// ── Global listeners ───────────────────────────────────────────────────────
-document.getElementById('km-slider').addEventListener('input', e => {
-  state.km = parseInt(e.target.value);
+  // Update km slider display
+  document.getElementById('km-slider').value = Math.min(Math.max(state.km, 2000), 75000);
   document.getElementById('km-display').textContent = fmtKm(state.km) + ' km';
-  update();
-});
-document.getElementById('gas-price').addEventListener('input', e => {
-  const v = parseFloat(e.target.value);
-  if (!isNaN(v) && v > 0) { state.gasPrice = v; update(); }
-});
-document.getElementById('cetes-slider').addEventListener('input', e => {
-  state.cetes = parseFloat(e.target.value);
-  document.getElementById('cetes-display').textContent = pct(state.cetes);
-  update();
-});
-document.getElementById('elec-price').addEventListener('input', e => {
-  const v = parseFloat(e.target.value);
-  if (!isNaN(v) && v > 0) { state.elecPrice = v; update(); }
-});
-document.getElementById('opp-toggle').addEventListener('change', e => {
-  state.oppOn = e.target.checked;
-  update();
-});
-document.getElementById('infl-toggle').addEventListener('change', e => {
-  state.inflOn = e.target.checked;
-  const wrap = document.getElementById('infl-rate-wrap');
-  const hint = document.getElementById('infl-hint');
-  wrap.classList.toggle('visible', state.inflOn);
-  hint.style.display = state.inflOn ? 'none' : '';
-  update();
-});
-document.getElementById('infl-rate').addEventListener('input', e => {
-  const v = parseFloat(e.target.value);
-  if (!isNaN(v) && v >= 0 && v <= 25) { state.inflRate = v / 100; update(); }
-});
 
-// ── Reset to defaults ──────────────────────────────────────────────────────
-function resetToDefaults() {
-  state.km        = DEFAULT_KM;
-  state.gasPrice  = DEFAULT_GAS_PRICE;
-  state.elecPrice = DEFAULT_ELEC_PRICE;
-  state.cetes     = DEFAULT_CETES;
-  state.oppOn     = true;
-  state.inflOn    = false;
-  state.inflRate  = DEFAULT_INFL_RATE;
-
-  MODES.forEach(m => {
-    Object.entries(m.params).forEach(([k, v]) => { state.params[m.id][k] = v.value; });
-  });
-
-  document.getElementById('km-slider').value            = DEFAULT_KM;
-  document.getElementById('km-display').textContent     = fmtKm(DEFAULT_KM) + ' km';
-  document.getElementById('gas-price').value            = DEFAULT_GAS_PRICE;
-  document.getElementById('cetes-slider').value         = DEFAULT_CETES;
-  document.getElementById('cetes-display').textContent  = pct(DEFAULT_CETES);
-  document.getElementById('elec-price').value           = DEFAULT_ELEC_PRICE;
-  document.getElementById('opp-toggle').checked         = true;
-  document.getElementById('infl-toggle').checked        = false;
-  document.getElementById('infl-rate').value            = (DEFAULT_INFL_RATE * 100).toFixed(1);
-  document.getElementById('infl-rate-wrap').classList.remove('visible');
-  document.getElementById('infl-hint').style.display    = '';
-
-  renderPanels();
-  resetKmeUI();
-  update();
-
-  const btn = document.getElementById('btn-reset');
-  btn.classList.add('flash');
-  btn.innerHTML = `
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;flex-shrink:0">
-      <polyline points="2,8 6,12 14,4"/>
-    </svg>
-    Restablecido`;
-  setTimeout(() => {
-    btn.classList.remove('flash');
-    btn.innerHTML = `
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;flex-shrink:0;transition:transform 0.35s">
-        <path d="M1.5 8a6.5 6.5 0 1 0 1.2-3.8"/>
-        <polyline points="1.5,2 1.5,6 5.5,6"/>
-      </svg>
-      Restablecer valores`;
-  }, 1800);
+  // Show/hide odometer estimator
+  const odoSection = document.getElementById('km-odo-section');
+  if (mode.kmEstimators.includes('odometer')) {
+    odoSection.style.display = '';
+  } else {
+    odoSection.style.display = 'none';
+  }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// TOOLTIP SYSTEM
-// ═══════════════════════════════════════════════════════════════════════════
+function calcOdoKm() {
+  const odo  = parseFloat(document.getElementById('km-odo-val').value);
+  const yrs  = parseFloat(document.getElementById('km-odo-years').value);
+  const res  = document.getElementById('km-odo-result');
+  if (!isNaN(odo) && !isNaN(yrs) && yrs > 0 && odo > 0) {
+    const km = Math.round(odo / yrs);
+    res.textContent = `→ ${fmtKm(km)} km/año`;
+    res.dataset.km = km;
+    res.style.display = '';
+    document.getElementById('km-odo-apply').style.display = '';
+  } else {
+    res.style.display = 'none';
+    document.getElementById('km-odo-apply').style.display = 'none';
+  }
+}
 
-(function initTooltips() {
+function applyOdoKm() {
+  const km = parseInt(document.getElementById('km-odo-result').dataset.km);
+  if (!km) return;
+  const clamped = Math.min(Math.max(km, 2000), 75000);
+  state.km = clamped;
+  document.getElementById('km-slider').value = clamped;
+  document.getElementById('km-display').textContent = fmtKm(clamped) + ' km';
+}
+
+let commuteMultiplier = 1.5;
+
+function calcCommuteKm() {
+  const dist = parseFloat(document.getElementById('km-commute-dist').value);
+  const days  = parseFloat(document.getElementById('km-commute-days').value);
+  const res   = document.getElementById('km-commute-result');
+  if (!isNaN(dist) && !isNaN(days) && dist > 0 && days > 0) {
+    const km = Math.round(dist * 2 * days * 50 * commuteMultiplier);
+    res.textContent = `→ ${fmtKm(km)} km/año`;
+    res.dataset.km = km;
+    res.style.display = '';
+    document.getElementById('km-commute-apply').style.display = '';
+  } else {
+    res.style.display = 'none';
+    document.getElementById('km-commute-apply').style.display = 'none';
+  }
+}
+
+function setCommuteActivity(level) {
+  const map = { low: 1.2, med: 1.5, high: 2.0 };
+  commuteMultiplier = map[level];
+  document.querySelectorAll('.activity-btn').forEach(b => b.classList.toggle('active', b.dataset.level === level));
+  calcCommuteKm();
+}
+
+function applyCommuteKm() {
+  const km = parseInt(document.getElementById('km-commute-result').dataset.km);
+  if (!km) return;
+  const clamped = Math.min(Math.max(km, 2000), 75000);
+  state.km = clamped;
+  document.getElementById('km-slider').value = clamped;
+  document.getElementById('km-display').textContent = fmtKm(clamped) + ' km';
+}
+
+function confirmStep3() {
+  const step4 = document.getElementById('step4');
+  const wasHidden = step4.classList.contains('step-hidden');
+  step4.classList.remove('step-hidden');
+  step4.classList.add('step-visible');
+  state.step = Math.max(state.step, 4);
+  renderStep4();
+  if (wasHidden) scrollToStep(step4);
+}
+
+// ── STEP 4: RESULTS ────────────────────────────────────────────────────────
+function renderStep4() {
+  rerenderResults();
+}
+
+function rerenderResults() {
+  if (state.step < 4 || !state.selectedMode) return;
+  renderCurrentCost();
+  renderAlternativeCards();
+}
+
+function renderCurrentCost() {
+  const mode = MODES.find(m => m.id === state.selectedMode);
+  const r = calcMode(state.selectedMode, state.km);
+
+  document.getElementById('result-mode-icon').textContent = mode.icon;
+  document.getElementById('result-mode-name').textContent = mode.name;
+
+  // Big number
+  document.getElementById('result-big-number').textContent = formatPeriod(r.total, state.costPeriod);
+  document.getElementById('result-period-label').textContent = periodLabel(state.costPeriod);
+
+  // Period toggles
+  document.querySelectorAll('.period-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.period === state.costPeriod);
+  });
+
+  // Breakdown
+  const breakdownEl = document.getElementById('result-breakdown');
+  const parts = [];
+  if (r.op > 0) parts.push(`<span class="breakdown-item"><span class="breakdown-dot op"></span>Operación: <strong>${fmt(r.op)}</strong></span>`);
+  if (r.depr > 0) parts.push(`<span class="breakdown-item"><span class="breakdown-dot depr"></span>Depreciación: <strong>${fmt(r.depr)}</strong></span>`);
+  if (r.opp > 0) parts.push(`<span class="breakdown-item"><span class="breakdown-dot opp"></span>Costo de oportunidad: <strong>${fmt(r.opp)}</strong></span>`);
+  breakdownEl.innerHTML = parts.join('<span class="breakdown-sep">·</span>');
+
+  // Per km
+  document.getElementById('result-perkm').textContent = `${fmt(r.perKm)} por kilómetro`;
+}
+
+function renderAlternativeCards() {
+  const myTotal = calcMode(state.selectedMode, state.km).total;
+  const container = document.getElementById('alternatives-container');
+  container.innerHTML = '';
+
+  const alternatives = MODES.filter(m => m.id !== state.selectedMode)
+    .map(m => {
+      const r = calcMode(m.id, state.km);
+      return { mode: m, r, delta: r.total - myTotal };
+    })
+    .sort((a, b) => a.delta - b.delta);
+
+  alternatives.forEach(({ mode, r, delta }) => {
+    const isSaving = delta < 0;
+    const card = document.createElement('div');
+    card.className = 'alt-card' + (state.altEditing === mode.id ? ' editing-open' : '');
+    card.dataset.id = mode.id;
+
+    const color = BAR_COLORS[mode.id];
+    const deltaLabel = isSaving
+      ? `<span class="delta saving">Ahorrarías ${fmt(Math.abs(delta))}/año</span>`
+      : `<span class="delta spending">Gastarías ${fmt(delta)} más/año</span>`;
+
+    // Build assumption summary line
+    const assumptionHTML = buildAssumptionLine(mode);
+
+    // Build inline edit panel if open
+    const editHTML = state.altEditing === mode.id ? buildAltEditPanel(mode) : '';
+
+    card.innerHTML = `
+      <div class="alt-card-main">
+        <div class="alt-card-left">
+          <div class="alt-card-icon" style="background:${color}22;color:${color}">${mode.icon}</div>
+          <div class="alt-card-info">
+            <div class="alt-card-name">${mode.name}</div>
+            <div class="alt-card-total">${fmt(r.total)}/año · ${fmt(r.perKm)}/km</div>
+            <div class="alt-card-assumptions">
+              <span class="assumption-label">Basado en:</span>
+              ${assumptionHTML}
+              <button class="assumption-edit-btn" data-id="${mode.id}" title="Ajustar supuestos">
+                ${state.altEditing === mode.id ? 'Cerrar ▲' : 'Ajustar ✎'}
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="alt-card-right">
+          ${deltaLabel}
+        </div>
+      </div>
+      ${editHTML}
+    `;
+
+    card.querySelector('.assumption-edit-btn').addEventListener('click', () => {
+      state.altEditing = state.altEditing === mode.id ? null : mode.id;
+      renderAlternativeCards();
+    });
+
+    if (state.altEditing === mode.id) {
+      wireAltEditPanel(card, mode);
+    }
+
+    container.appendChild(card);
+  });
+
+  // Standalone free-mix row
+  container.appendChild(buildFreeMixRow(myTotal));
+}
+
+// Build the assumption summary text for an alt card
+function buildAssumptionLine(mode) {
+  const keys = KEY_PARAMS[mode.id] || [];
+  const p = state.params[mode.id];
+  const modeObj = MODES.find(m => m.id === mode.id);
+
+  const parts = keys.map(key => {
+    const fieldDef = modeObj.fields.find(f => f.key === key);
+    if (!fieldDef) return '';
+    const val = p[key];
+    if (fieldDef.isCurrency) return `${fieldDef.label}: ${fmt(val)}`;
+    if (fieldDef.isPct)      return `${fieldDef.label}: ${(val * 100).toFixed(0)}%`;
+    return `${fieldDef.label}: ${val} ${fieldDef.unit}`;
+  });
+
+  return parts.map(t => `<span class="assumption-chip">${t}</span>`).join('');
+}
+
+// Build the inline mini-edit panel HTML for an alt card
+function buildAltEditPanel(mode) {
+  const keys = KEY_PARAMS[mode.id] || [];
+  const p = state.params[mode.id];
+  const modeObj = MODES.find(m => m.id === mode.id);
+
+  const fieldsHTML = keys.map(key => {
+    const fieldDef = modeObj.fields.find(f => f.key === key);
+    if (!fieldDef) return '';
+    const val = p[key];
+    const tipHTML = fieldDef.tip
+      ? `<span class="tt" data-tip="${fieldDef.tip.replace(/"/g, '&quot;')}">?</span>`
+      : '';
+
+    let inputHTML;
+    if (fieldDef.isCurrency) {
+      inputHTML = `
+        <div class="currency-wrap">
+          <span class="currency-prefix">$</span>
+          <input type="text" class="alt-edit-input" data-key="${key}" data-iscurrency="1"
+            data-modeid="${mode.id}" value="${formatCurrencyInput(val)}" inputmode="numeric">
+        </div>`;
+    } else if (fieldDef.isPct) {
+      inputHTML = `
+        <div class="plain-input-wrap">
+          <input type="number" class="alt-edit-input" data-key="${key}" data-ispct="1"
+            data-modeid="${mode.id}" value="${(val * 100).toFixed(0)}"
+            step="${fieldDef.step || 1}" min="${fieldDef.min || 0}" max="${fieldDef.max || 100}">
+          <span class="field-suffix">%</span>
+        </div>`;
+    } else {
+      inputHTML = `
+        <div class="plain-input-wrap">
+          <input type="number" class="alt-edit-input" data-key="${key}"
+            data-modeid="${mode.id}" value="${val}"
+            step="${fieldDef.step || 1}" min="${fieldDef.min || 0}" max="${fieldDef.max || 99999}">
+          <span class="field-suffix">${fieldDef.unit}</span>
+        </div>`;
+    }
+
+    return `
+      <div class="alt-edit-field">
+        <div class="alt-edit-label">${fieldDef.label} ${tipHTML}</div>
+        ${inputHTML}
+      </div>`;
+  }).join('');
+
+  return `<div class="alt-edit-panel"><div class="alt-edit-grid">${fieldsHTML}</div></div>`;
+}
+
+// Wire up input events on the inline edit panel
+function wireAltEditPanel(card, mode) {
+  card.querySelectorAll('.alt-edit-input').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const key = inp.dataset.key;
+      const modeId = inp.dataset.modeid;
+      if (inp.dataset.iscurrency) {
+        const val = parseFloat(inp.value.replace(/,/g, '')) || 0;
+        state.params[modeId][key] = val;
+      } else if (inp.dataset.ispct) {
+        const val = parseFloat(inp.value) / 100;
+        if (!isNaN(val)) state.params[modeId][key] = val;
+      } else {
+        const val = parseFloat(inp.value);
+        if (!isNaN(val)) state.params[modeId][key] = val;
+      }
+      rerenderResults();
+    });
+    if (inp.dataset.iscurrency) {
+      inp.addEventListener('blur', () => {
+        inp.value = formatCurrencyInput(state.params[inp.dataset.modeid][inp.dataset.key]);
+      });
+      inp.addEventListener('focus', () => {
+        inp.value = state.params[inp.dataset.modeid][inp.dataset.key] || '';
+      });
+    }
+  });
+}
+
+// ── STANDALONE FREE-MIX ROW ────────────────────────────────────────────────
+function buildFreeMixRow(myTotal) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'free-mix-row';
+
+  const allModes = MODES;
+  const modeOptions = allModes.map(m =>
+    `<option value="${m.id}" ${state.freeMix.modeA === m.id ? 'selected' : ''}>${m.icon} ${m.name}</option>`
+  ).join('');
+  const modeOptionsB = allModes.map(m =>
+    `<option value="${m.id}" ${state.freeMix.modeB === m.id ? 'selected' : ''}>${m.icon} ${m.name}</option>`
+  ).join('');
+
+  const mixResult = state.freeMix.open ? calcFreeMixCost() : null;
+  const mixDelta  = mixResult !== null ? mixResult - myTotal : null;
+  const isSaving  = mixDelta !== null && mixDelta < 0;
+  const ratio     = state.freeMix.ratio;
+
+  wrapper.innerHTML = `
+    <div class="free-mix-header">
+      <span class="free-mix-icon">⊕</span>
+      <span class="free-mix-title">Calcular modo mixto</span>
+      <span class="free-mix-desc">¿Qué pasaría si combinaras dos modos distintos?</span>
+    </div>
+    <div class="free-mix-selectors">
+      <select class="free-mix-select" id="fmix-a">${modeOptions}</select>
+      <span class="free-mix-plus">+</span>
+      <select class="free-mix-select" id="fmix-b">${modeOptionsB}</select>
+      <button class="free-mix-calc-btn" id="fmix-calc">Calcular</button>
+    </div>
+    ${state.freeMix.open ? `
+      <div class="free-mix-result-area">
+        <div class="mix-slider-row">
+          <span class="mix-label-a">100% ${MODES.find(m=>m.id===state.freeMix.modeA)?.icon}</span>
+          <input type="range" class="mix-slider" id="fmix-slider" min="0" max="1" step="0.01" value="${ratio}">
+          <span class="mix-label-b">100% ${MODES.find(m=>m.id===state.freeMix.modeB)?.icon}</span>
+        </div>
+        <div class="mix-snaps">
+          <button class="mix-snap-btn fmix-snap ${Math.abs(ratio-0.2)<0.01?'active':''}" data-ratio="0.2">20 / 80<br><small>Ocasionalmente</small></button>
+          <button class="mix-snap-btn fmix-snap ${Math.abs(ratio-0.5)<0.01?'active':''}" data-ratio="0.5">50 / 50<br><small>Mitad y mitad</small></button>
+          <button class="mix-snap-btn fmix-snap ${Math.abs(ratio-0.8)<0.01?'active':''}" data-ratio="0.8">80 / 20<br><small>Principalmente A</small></button>
+        </div>
+        <div class="mix-result">
+          <div id="fmix-cost" class="mix-result-cost">${mixResult !== null ? fmt(mixResult)+'/año' : '—'}</div>
+          <div id="fmix-delta" class="mix-result-delta ${isSaving?'saving':'spending'}">
+            ${mixDelta !== null
+              ? (isSaving ? `Ahorrarías ${fmt(Math.abs(mixDelta))}/año vs tu modo actual` : `Gastarías ${fmt(mixDelta)} más/año vs tu modo actual`)
+              : ''}
+          </div>
+        </div>
+      </div>` : ''}
+  `;
+
+  // Selector change
+  wrapper.querySelector('#fmix-a').addEventListener('change', e => {
+    state.freeMix.modeA = e.target.value;
+    state.freeMix.open = false;
+    renderAlternativeCards();
+  });
+  wrapper.querySelector('#fmix-b').addEventListener('change', e => {
+    state.freeMix.modeB = e.target.value;
+    state.freeMix.open = false;
+    renderAlternativeCards();
+  });
+
+  // Calc button
+  wrapper.querySelector('#fmix-calc').addEventListener('click', () => {
+    if (state.freeMix.modeA === state.freeMix.modeB) {
+      alert('Elige dos modos diferentes para combinar.');
+      return;
+    }
+    state.freeMix.open = true;
+    renderAlternativeCards();
+  });
+
+  // Slider (only wired if open)
+  if (state.freeMix.open) {
+    const slider = wrapper.querySelector('#fmix-slider');
+    if (slider) {
+      slider.addEventListener('input', () => {
+        state.freeMix.ratio = parseFloat(slider.value);
+        updateFreeMixResult(wrapper, myTotal);
+      });
+      wrapper.querySelectorAll('.fmix-snap').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.freeMix.ratio = parseFloat(btn.dataset.ratio);
+          slider.value = state.freeMix.ratio;
+          updateFreeMixResult(wrapper, myTotal);
+          wrapper.querySelectorAll('.fmix-snap').forEach(b =>
+            b.classList.toggle('active', Math.abs(parseFloat(b.dataset.ratio) - state.freeMix.ratio) < 0.01)
+          );
+        });
+      });
+    }
+  }
+
+  return wrapper;
+}
+
+function calcFreeMixCost() {
+  const { modeA, modeB, ratio } = state.freeMix;
+  // ratio = fraction of km on modeA, (1-ratio) on modeB
+  const kmA = state.km * ratio;
+  const kmB = state.km * (1 - ratio);
+  const rA = calcMode(modeA, kmA);
+  const rB = calcMode(modeB, kmB);
+  let total = rA.total + rB.total;
+
+  // Capital modes: fixed costs don't scale with partial km
+  const mA = MODES.find(m => m.id === modeA);
+  const mB = MODES.find(m => m.id === modeB);
+  if (mA.hasCapital) {
+    const full = calcMode(modeA, state.km);
+    total = total - rA.depr - rA.opp + full.depr + full.opp;
+  }
+  if (mB.hasCapital) {
+    const full = calcMode(modeB, state.km);
+    total = total - rB.depr - rB.opp + full.depr + full.opp;
+  }
+  return total;
+}
+
+function updateFreeMixResult(wrapper, myTotal) {
+  const mixTotal = calcFreeMixCost();
+  const mixDelta = mixTotal - myTotal;
+  const isSaving = mixDelta < 0;
+  const costEl  = wrapper.querySelector('#fmix-cost');
+  const deltaEl = wrapper.querySelector('#fmix-delta');
+  if (costEl)  costEl.textContent  = `${fmt(mixTotal)}/año`;
+  if (deltaEl) {
+    deltaEl.className = `mix-result-delta ${isSaving ? 'saving' : 'spending'}`;
+    deltaEl.textContent = isSaving
+      ? `Ahorrarías ${fmt(Math.abs(mixDelta))}/año vs tu modo actual`
+      : `Gastarías ${fmt(mixDelta)} más/año vs tu modo actual`;
+  }
+}
+
+
+
+// ── STEP VISIBILITY ────────────────────────────────────────────────────────
+function hideStepsFrom(stepNum) {
+  for (let i = stepNum; i <= 4; i++) {
+    const el = document.getElementById(`step${i}`);
+    if (el) {
+      el.classList.add('step-hidden');
+      el.classList.remove('step-visible');
+    }
+  }
+  if (stepNum <= 4) state.step = Math.min(state.step, stepNum - 1);
+}
+
+// ── GLOBAL CONTROLS (advanced panel) ──────────────────────────────────────
+function initAdvancedPanel() {
+  const toggle = document.getElementById('advanced-toggle');
+  const panel  = document.getElementById('advanced-panel');
+  toggle.addEventListener('click', () => {
+    const open = panel.classList.toggle('open');
+    toggle.querySelector('.adv-chevron').textContent = open ? '▲' : '▼';
+    toggle.querySelector('.adv-label').textContent = open ? 'Ocultar parámetros avanzados' : 'Ver parámetros avanzados';
+  });
+
+  document.getElementById('adv-gas-price').addEventListener('input', e => {
+    const v = parseFloat(e.target.value);
+    if (!isNaN(v) && v > 0) { state.gasPrice = v; rerenderResults(); }
+  });
+  document.getElementById('adv-elec-price').addEventListener('input', e => {
+    const v = parseFloat(e.target.value);
+    if (!isNaN(v) && v > 0) { state.elecPrice = v; rerenderResults(); }
+  });
+  document.getElementById('adv-cetes-slider').addEventListener('input', e => {
+    state.cetes = parseFloat(e.target.value);
+    document.getElementById('adv-cetes-display').textContent = pct(state.cetes);
+    rerenderResults();
+  });
+  document.getElementById('adv-opp-toggle').addEventListener('change', e => {
+    state.oppOn = e.target.checked;
+    rerenderResults();
+  });
+}
+
+// ── TOOLTIP SYSTEM ─────────────────────────────────────────────────────────
+function initTooltips() {
   const popup = document.createElement('div');
   popup.className = 'tt-popup';
   document.body.appendChild(popup);
-
   let activeEl = null;
 
   function position(el) {
@@ -699,21 +1041,14 @@ function resetToDefaults() {
     const popupW = 280;
     let left = rect.left;
     let top  = rect.bottom + 8;
-
-    // Flip above if not enough room below
     if (top + 120 > window.innerHeight) {
       top = rect.top - 8;
       popup.style.transform = 'translateY(-100%)';
     } else {
       popup.style.transform = '';
     }
-
-    // Keep within viewport horizontally
-    if (left + popupW > window.innerWidth - margin) {
-      left = window.innerWidth - popupW - margin;
-    }
+    if (left + popupW > window.innerWidth - margin) left = window.innerWidth - popupW - margin;
     if (left < margin) left = margin;
-
     popup.style.left = left + 'px';
     popup.style.top  = top + 'px';
   }
@@ -726,19 +1061,39 @@ function resetToDefaults() {
     popup.classList.add('visible');
     position(el);
   });
-
   document.addEventListener('mouseout', e => {
-    const el = e.target.closest('.tt');
-    if (!el) return;
+    if (!e.target.closest('.tt')) return;
     activeEl = null;
     popup.classList.remove('visible');
   });
+  window.addEventListener('scroll', () => { if (activeEl) position(activeEl); }, { passive: true });
+}
 
-  window.addEventListener('scroll', () => {
-    if (activeEl) position(activeEl);
-  }, { passive: true });
-})();
+// ── PERIOD TOGGLE ──────────────────────────────────────────────────────────
+function initPeriodToggle() {
+  document.querySelectorAll('.period-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.costPeriod = btn.dataset.period;
+      renderCurrentCost();
+    });
+  });
+}
 
-// ── Init ───────────────────────────────────────────────────────────────────
-renderPanels();
-update();
+// ── KM SLIDER ─────────────────────────────────────────────────────────────
+function initKmSlider() {
+  document.getElementById('km-slider').addEventListener('input', e => {
+    state.km = parseInt(e.target.value);
+    document.getElementById('km-display').textContent = fmtKm(state.km) + ' km';
+    rerenderResults();
+  });
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+state.presetCondition = 'new';
+state.activePreset = null;
+
+renderStep1();
+initAdvancedPanel();
+initTooltips();
+initPeriodToggle();
+initKmSlider();
