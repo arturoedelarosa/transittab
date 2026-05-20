@@ -15,10 +15,142 @@
   <div class="country-badge">🇲🇽 MX · 2026</div>
 </header>
 
+<!-- CONFIG BAR — visible only after step 4 is reached -->
+<div class="config-bar" id="config-bar" style="display:none">
+  <div class="config-bar-inner">
+    <div class="config-bar-summary" id="config-bar-summary"></div>
+    <button class="config-bar-edit-btn" id="config-bar-edit-btn">
+      Editar ✎
+    </button>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-backdrop" id="modal-backdrop" style="display:none" aria-modal="true" role="dialog">
+  <div class="modal">
+
+    <div class="modal-header">
+      <div class="modal-title">Editar configuración</div>
+      <button class="modal-close-btn" id="modal-close-btn" aria-label="Cerrar">✕</button>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- Left: inputs -->
+      <div class="modal-inputs" id="modal-inputs">
+
+        <!-- Section 1: Mode -->
+        <div class="modal-section">
+          <div class="modal-section-label">1 · ¿Cómo te mueves?</div>
+          <div class="mode-cards modal-mode-cards" id="modal-step1-modes"></div>
+        </div>
+
+        <!-- Section 2: Vehicle details -->
+        <div class="modal-section" id="modal-section2">
+          <div class="modal-section-label">
+            2 · Tu <span id="modal-step2-modename"></span>
+          </div>
+          <div id="modal-step2-presets-section">
+            <div class="step-section-label" style="margin-bottom:12px">Tipo de vehículo</div>
+            <div id="modal-step2-presets"></div>
+          </div>
+          <div class="step-section-label" style="margin-top:16px;margin-bottom:10px">
+            Tus datos
+            <span class="tt" data-tip="Todos los valores son editables. Los presets cargan promedios nacionales verificados.">?</span>
+          </div>
+          <div class="fields-grid" id="modal-step2-fields"></div>
+        </div>
+
+        <!-- Section 3: Distance -->
+        <div class="modal-section">
+          <div class="modal-section-label">3 · Kilómetros al año</div>
+          <div class="km-hero-block" style="margin-bottom:0">
+            <div class="km-slider-row">
+              <span class="km-bound">2,000</span>
+              <input type="range" id="modal-km-slider" min="2000" max="75000" step="500" value="10000">
+              <span class="km-bound">75,000</span>
+              <span class="km-value-display" id="modal-km-display">10,000 km</span>
+            </div>
+            <div class="km-hint">Promedio nacional: ~10,000 km/año</div>
+          </div>
+        </div>
+
+        <!-- Section 4: Advanced params -->
+        <div class="modal-section modal-section-adv">
+          <div class="modal-section-label">Parámetros avanzados</div>
+          <div class="adv-grid modal-adv-grid">
+
+            <div class="adv-group">
+              <label>Precio gasolina Magna
+                <span class="tt" data-tip="Promedio nacional mayo 2026. Fuente: PETROIntelligence / nacionalgasolinero.com">?</span>
+              </label>
+              <div class="adv-input-wrap">
+                <span class="adv-prefix">$</span>
+                <input type="number" id="modal-adv-gas-price" step="0.10" min="15" max="40">
+                <span class="adv-suffix">/ litro</span>
+              </div>
+            </div>
+
+            <div class="adv-group">
+              <label>Tarifa eléctrica CFE
+                <span class="tt" data-tip="Costo por kWh en tarifa doméstica. Solo relevante si comparas vehículos eléctricos. Fuente: CFE 2026.">?</span>
+              </label>
+              <div class="adv-input-wrap">
+                <span class="adv-prefix">$</span>
+                <input type="number" id="modal-adv-elec-price" step="0.10" min="0.5" max="10">
+                <span class="adv-suffix">/ kWh</span>
+              </div>
+            </div>
+
+            <div class="adv-group">
+              <label>Rendimiento financiero
+                <span class="tt" data-tip="Tasa anual de instrumentos de bajo riesgo. Se usa para el costo de oportunidad del capital en tu vehículo.">?</span>
+              </label>
+              <div class="adv-slider-row">
+                <input type="range" id="modal-adv-cetes-slider" min="0.03" max="0.18" step="0.005">
+                <span class="adv-val" id="modal-adv-cetes-display">7.5%</span>
+              </div>
+            </div>
+
+            <div class="adv-group adv-toggle-group">
+              <input type="checkbox" id="modal-adv-opp-toggle">
+              <label for="modal-adv-opp-toggle">Incluir costo de oportunidad del capital</label>
+            </div>
+
+          </div>
+          <div class="adv-footnote">
+            Fuentes: PETROIntelligence · CONDUSEF/Rastreator.mx · Ciudadanos Observando · J.D. Power/Motorpasión MX 2024 · CetesDirecto.com
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right: live preview (desktop only) -->
+      <div class="modal-preview" id="modal-preview">
+        <div class="modal-preview-label">Vista previa</div>
+        <div class="modal-preview-mode" id="modal-preview-mode"></div>
+        <div class="modal-preview-number" id="modal-preview-number">—</div>
+        <div class="modal-preview-period">al año</div>
+        <div class="modal-preview-breakdown" id="modal-preview-breakdown"></div>
+        <div class="modal-preview-perkm" id="modal-preview-perkm"></div>
+        <div class="modal-preview-divider"></div>
+        <div class="modal-preview-alts" id="modal-preview-alts"></div>
+      </div>
+
+    </div>
+
+    <div class="modal-footer">
+      <div class="modal-footer-note">Los cambios se aplican al instante.</div>
+      <button class="modal-done-btn" id="modal-done-btn">Ver resultado →</button>
+    </div>
+
+  </div>
+</div>
+
 <div class="main">
 
   <!-- HERO -->
-  <div class="hero">
+  <div class="hero" id="hero">
     <div class="hero-label">Calculadora de transporte · México 2026</div>
     <h1>Cada kilómetro tiene<br>un <em>precio oculto.</em></h1>
     <p>La gasolina es sólo la punta del iceberg. Descubre cuánto te cuesta realmente moverte — y cuánto podrías ahorrar.</p>
@@ -29,7 +161,7 @@
   ══════════════════════════════════════════ -->
   <div class="step step-visible" id="step1">
     <div class="step-header">
-      <div class="step-number">1</div>
+      <div class="step-progress">Paso 1 de 3</div>
       <div class="step-title">¿Cómo te mueves actualmente?</div>
     </div>
     <div class="mode-cards" id="step1-modes"></div>
@@ -40,7 +172,8 @@
   ══════════════════════════════════════════ -->
   <div class="step step-hidden" id="step2">
     <div class="step-header">
-      <div class="step-number">2</div>
+      <button class="back-btn" onclick="goBack(2)">← Volver</button>
+      <div class="step-progress">Paso 2 de 3</div>
       <div class="step-title">
         Cuéntame sobre tu
         <span id="step2-icon"></span>
@@ -72,7 +205,8 @@
   ══════════════════════════════════════════ -->
   <div class="step step-hidden" id="step3">
     <div class="step-header">
-      <div class="step-number">3</div>
+      <button class="back-btn" onclick="goBack(3)">← Volver</button>
+      <div class="step-progress">Paso 3 de 3</div>
       <div class="step-title">¿Cuántos kilómetros recorres al año?</div>
     </div>
 
@@ -171,66 +305,8 @@
 
     <!-- Alternatives -->
     <div class="alternatives-section">
-      <div class="step-header" style="margin-bottom:16px">
-        <div class="step-number">4</div>
-        <div class="step-title">¿Qué pasaría si cambiaras?</div>
-      </div>
+      <div class="results-section-title">¿Qué pasaría si cambiaras?</div>
       <div class="alternatives-container" id="alternatives-container"></div>
-    </div>
-
-    <!-- Advanced panel -->
-    <div class="advanced-section">
-      <button class="advanced-toggle" id="advanced-toggle">
-        <span class="adv-label">Ver parámetros avanzados</span>
-        <span class="adv-chevron">▼</span>
-      </button>
-      <div class="advanced-panel" id="advanced-panel">
-        <div class="adv-grid">
-
-          <div class="adv-group">
-            <label>Precio gasolina Magna
-              <span class="tt" data-tip="Promedio nacional mayo 2026. Fuente: PETROIntelligence / nacionalgasolinero.com">?</span>
-            </label>
-            <div class="adv-input-wrap">
-              <span class="adv-prefix">$</span>
-              <input type="number" id="adv-gas-price" value="23.68" step="0.10" min="15" max="40">
-              <span class="adv-suffix">/ litro</span>
-            </div>
-          </div>
-
-          <div class="adv-group">
-            <label>Tarifa eléctrica CFE
-              <span class="tt" data-tip="Costo por kWh en tarifa doméstica. Solo relevante si comparas vehículos eléctricos. Fuente: CFE 2026.">?</span>
-            </label>
-            <div class="adv-input-wrap">
-              <span class="adv-prefix">$</span>
-              <input type="number" id="adv-elec-price" value="2.00" step="0.10" min="0.5" max="10">
-              <span class="adv-suffix">/ kWh</span>
-            </div>
-          </div>
-
-          <div class="adv-group">
-            <label>Rendimiento financiero
-              <span class="tt" data-tip="Tasa anual de instrumentos de bajo riesgo (CETES, pagarés, fondos de deuda). Se usa para calcular el costo de oportunidad del capital inmovilizado en tu vehículo.">?</span>
-            </label>
-            <div class="adv-slider-row">
-              <input type="range" id="adv-cetes-slider" min="0.03" max="0.18" step="0.005" value="0.075">
-              <span class="adv-val" id="adv-cetes-display">7.5%</span>
-            </div>
-          </div>
-
-          <div class="adv-group adv-toggle-group">
-            <input type="checkbox" id="adv-opp-toggle" checked>
-            <label for="adv-opp-toggle">Incluir costo de oportunidad del capital</label>
-          </div>
-
-        </div>
-        <div class="adv-footnote">
-          Fuentes: PETROIntelligence (gasolina) · CONDUSEF/Rastreator.mx (seguros) ·
-          Ciudadanos Observando (transporte público, 26 ciudades) · J.D. Power/Motorpasión MX 2024 (precio auto) ·
-          CetesDirecto.com (tasa de oportunidad). Estimaciones de referencia — pueden variar según perfil y ciudad.
-        </div>
-      </div>
     </div>
 
   </div>
