@@ -383,23 +383,52 @@ function renderStep1() {
   });
 }
 
-function selectMode(id) {
-  state.selectedMode = id;
-  renderStep1();
-
-  // Reveal step 2
-  const step2 = document.getElementById('step2');
-  const wasHidden = step2.classList.contains('step-hidden');
-  step2.classList.remove('step-hidden');
-  step2.classList.add('step-visible');
-  renderStep2();
-  if (wasHidden) scrollToStep(step2);
-
-  // Hide steps 3+ if mode changes
-  hideStepsFrom(3);
+// ── STEP NAVIGATION ────────────────────────────────────────────────────────
+function showStep(stepNum) {
+  // Hide all wizard steps and results
+  ['step1','step2','step3','step4'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.classList.add('step-hidden'); el.classList.remove('step-visible'); }
+  });
+  // Show hero only during wizard
+  const hero = document.getElementById('hero');
+  if (hero) hero.style.display = stepNum <= 3 ? '' : 'none';
+  // Show config bar only on results
+  document.getElementById('config-bar').style.display = stepNum === 4 ? '' : 'none';
+  // Show the target step
+  const target = document.getElementById(`step${stepNum}`);
+  if (target) { target.classList.remove('step-hidden'); target.classList.add('step-visible'); }
+  // Scroll to top
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  state.step = Math.max(state.step, stepNum);
 }
 
-// ── STEP 2: VEHICLE DETAILS ────────────────────────────────────────────────
+function goBack(currentStep) {
+  showStep(currentStep - 1);
+}
+
+function selectMode(id) {
+  state.selectedMode = id;
+  // Reset downstream state when mode changes
+  state.activePreset = null;
+  state.params[id] = { ...MODES.find(m => m.id === id).defaultParams };
+  renderStep2();
+  showStep(2);
+}
+
+// Confirm step 2 → show step 3
+function confirmStep2() {
+  applyMatchedPresets();
+  renderStep3();
+  showStep(3);
+}
+
+function confirmStep3() {
+  state.step = 4;
+  renderStep4();
+  updateConfigBar();
+  showStep(4);
+}
 function renderStep2() {
   const mode = MODES.find(m => m.id === state.selectedMode);
   if (!mode) return;
@@ -544,18 +573,6 @@ function renderFields(mode) {
   });
 }
 
-// Confirm step 2 → reveal step 3
-function confirmStep2() {
-  applyMatchedPresets();
-  const step3 = document.getElementById('step3');
-  const wasHidden = step3.classList.contains('step-hidden');
-  step3.classList.remove('step-hidden');
-  step3.classList.add('step-visible');
-  state.step = Math.max(state.step, 3);
-  renderStep3();
-  if (wasHidden) scrollToStep(step3);
-  hideStepsFrom(4);
-}
 
 // ── STEP 3: DISTANCE ───────────────────────────────────────────────────────
 function renderStep3() {
@@ -634,15 +651,6 @@ function applyCommuteKm() {
   document.getElementById('km-display').textContent = fmtKm(clamped) + ' km';
 }
 
-function confirmStep3() {
-  const step4 = document.getElementById('step4');
-  const wasHidden = step4.classList.contains('step-hidden');
-  step4.classList.remove('step-hidden');
-  step4.classList.add('step-visible');
-  state.step = Math.max(state.step, 4);
-  renderStep4();
-  if (wasHidden) scrollToStep(step4);
-}
 
 // ── STEP 4: RESULTS ────────────────────────────────────────────────────────
 function renderStep4() {
@@ -695,6 +703,10 @@ function renderAlternativeCards() {
     })
     .sort((a, b) => a.delta - b.delta);
 
+  // Max total across ALL modes (including current) for bar scaling
+  const allTotals = [myTotal, ...alternatives.map(a => a.r.total)];
+  const maxTotal = Math.max(...allTotals);
+
   alternatives.forEach(({ mode, r, delta }) => {
     const isSaving = delta < 0;
     const card = document.createElement('div');
@@ -705,6 +717,13 @@ function renderAlternativeCards() {
     const deltaLabel = isSaving
       ? `<span class="delta saving">Ahorrarías ${fmt(Math.abs(delta))}/año</span>`
       : `<span class="delta spending">Gastarías ${fmt(delta)} más/año</span>`;
+
+    // Proportion bar — width as % of maxTotal, capped at 80px track
+    const barPct = maxTotal > 0 ? (r.total / maxTotal) * 100 : 0;
+    const barHTML = `
+      <span class="cost-bar-track" title="${Math.round(barPct)}% del modo más caro">
+        <span class="cost-bar-fill" style="width:${barPct.toFixed(1)}%;background:${color}"></span>
+      </span>`;
 
     // Build assumption summary line
     const assumptionHTML = buildAssumptionLine(mode);
@@ -718,7 +737,11 @@ function renderAlternativeCards() {
           <div class="alt-card-icon" style="background:${color}22;color:${color}">${mode.icon}</div>
           <div class="alt-card-info">
             <div class="alt-card-name">${mode.name}</div>
-            <div class="alt-card-total">${fmt(r.total)}/año · ${fmt(r.perKm)}/km</div>
+            <div class="alt-card-total">
+              ${fmt(r.total)}/año
+              ${barHTML}
+              <span class="alt-card-perkm">${fmt(r.perKm)}/km</span>
+            </div>
             <div class="alt-card-assumptions">
               <span class="assumption-label">Basado en:</span>
               ${assumptionHTML}
@@ -999,36 +1022,354 @@ function hideStepsFrom(stepNum) {
   if (stepNum <= 4) state.step = Math.min(state.step, stepNum - 1);
 }
 
-// ── GLOBAL CONTROLS (advanced panel) ──────────────────────────────────────
+// ── GLOBAL CONTROLS (advanced panel — now lives in modal) ─────────────────
 function initAdvancedPanel() {
-  const toggle = document.getElementById('advanced-toggle');
-  const panel  = document.getElementById('advanced-panel');
-  toggle.addEventListener('click', () => {
-    const open = panel.classList.toggle('open');
-    toggle.querySelector('.adv-chevron').textContent = open ? '▲' : '▼';
-    toggle.querySelector('.adv-label').textContent = open ? 'Ocultar parámetros avanzados' : 'Ver parámetros avanzados';
-  });
+  // The advanced panel has moved into the modal.
+  // Wiring happens in initModal() below.
+}
 
-  document.getElementById('adv-gas-price').addEventListener('input', e => {
-    const v = parseFloat(e.target.value);
-    if (!isNaN(v) && v > 0) { state.gasPrice = v; rerenderResults(); }
-  });
-  document.getElementById('adv-elec-price').addEventListener('input', e => {
-    const v = parseFloat(e.target.value);
-    if (!isNaN(v) && v > 0) { state.elecPrice = v; rerenderResults(); }
-  });
-  document.getElementById('adv-cetes-slider').addEventListener('input', e => {
-    state.cetes = parseFloat(e.target.value);
-    document.getElementById('adv-cetes-display').textContent = pct(state.cetes);
-    rerenderResults();
-  });
-  document.getElementById('adv-opp-toggle').addEventListener('change', e => {
-    state.oppOn = e.target.checked;
-    rerenderResults();
+// ── CONFIG BAR ─────────────────────────────────────────────────────────────
+function updateConfigBar() {
+  const bar = document.getElementById('config-bar');
+  if (!state.selectedMode) return;
+  bar.style.display = '';
+
+  const mode = MODES.find(m => m.id === state.selectedMode);
+  const summaryEl = document.getElementById('config-bar-summary');
+
+  // Build summary chips
+  let presetLabel = '';
+  if (state.activePreset) {
+    const modePresets = PRESETS[state.selectedMode];
+    if (modePresets) {
+      const p = modePresets.find(pr => pr.id === state.activePreset);
+      if (p) presetLabel = p.label + (state.presetCondition === 'used' ? ' (usado)' : ' (nuevo)');
+    }
+  }
+
+  const chips = [
+    `<span class="config-bar-chip">${mode.icon} ${mode.name}</span>`,
+    presetLabel ? `<span class="config-bar-sep">·</span><span class="config-bar-chip">${presetLabel}</span>` : '',
+    `<span class="config-bar-sep">·</span><span class="config-bar-chip">📍 ${fmtKm(state.km)} km/año</span>`,
+  ];
+  summaryEl.innerHTML = chips.join('');
+}
+
+// ── MODAL ──────────────────────────────────────────────────────────────────
+function openModal() {
+  const backdrop = document.getElementById('modal-backdrop');
+  backdrop.style.display = 'flex';
+  // Sync modal inputs with current state
+  syncModalInputs();
+  renderModalPreview();
+  // Trap body scroll
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  const backdrop = document.getElementById('modal-backdrop');
+  backdrop.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function syncModalInputs() {
+  // Section 1: mode cards
+  renderModalModeCards();
+
+  // Section 2: vehicle details
+  renderModalStep2();
+
+  // Section 3: km slider
+  const slider = document.getElementById('modal-km-slider');
+  const display = document.getElementById('modal-km-display');
+  slider.value = Math.min(Math.max(state.km, 2000), 75000);
+  display.textContent = fmtKm(state.km) + ' km';
+
+  // Advanced params
+  document.getElementById('modal-adv-gas-price').value = state.gasPrice;
+  document.getElementById('modal-adv-elec-price').value = state.elecPrice;
+  const cetesSlider = document.getElementById('modal-adv-cetes-slider');
+  cetesSlider.value = state.cetes;
+  document.getElementById('modal-adv-cetes-display').textContent = pct(state.cetes);
+  document.getElementById('modal-adv-opp-toggle').checked = state.oppOn;
+}
+
+function renderModalModeCards() {
+  const container = document.getElementById('modal-step1-modes');
+  container.innerHTML = '';
+  MODES.forEach(mode => {
+    const card = document.createElement('button');
+    card.className = 'mode-card' + (state.selectedMode === mode.id ? ' selected' : '');
+    card.dataset.id = mode.id;
+    card.innerHTML = `
+      <span class="mode-card-icon">${mode.icon}</span>
+      <span class="mode-card-name">${mode.name}</span>
+    `;
+    card.addEventListener('click', () => {
+      state.selectedMode = mode.id;
+      // Reset preset when mode changes inside modal
+      state.activePreset = null;
+      // Re-init params for the new mode
+      state.params[mode.id] = { ...mode.defaultParams };
+      applyMatchedPresets();
+      renderModalModeCards();
+      renderModalStep2();
+      rerenderResults();
+      updateConfigBar();
+      renderModalPreview();
+      // Also sync the main step1 cards
+      renderStep1();
+    });
+    container.appendChild(card);
   });
 }
 
-// ── TOOLTIP SYSTEM ─────────────────────────────────────────────────────────
+function renderModalStep2() {
+  const mode = MODES.find(m => m.id === state.selectedMode);
+  if (!mode) return;
+
+  document.getElementById('modal-step2-modename').textContent = mode.name;
+
+  const presetsSection = document.getElementById('modal-step2-presets-section');
+  if (mode.hasPresets && PRESETS[mode.id]) {
+    presetsSection.style.display = '';
+    renderModalPresets(mode);
+  } else {
+    presetsSection.style.display = 'none';
+  }
+  renderModalFields(mode);
+}
+
+function renderModalPresets(mode) {
+  const presetsEl = document.getElementById('modal-step2-presets');
+  presetsEl.innerHTML = '';
+
+  // New/Used toggle
+  const toggleWrap = document.createElement('div');
+  toggleWrap.className = 'preset-condition-row';
+  toggleWrap.innerHTML = `
+    <span class="preset-condition-label">¿Como lo adquiriste?</span>
+    <div class="preset-condition-toggle">
+      <button class="condition-btn ${state.presetCondition !== 'used' ? 'active' : ''}" data-val="new">Nuevo</button>
+      <button class="condition-btn ${state.presetCondition === 'used' ? 'active' : ''}" data-val="used">Usado</button>
+    </div>
+  `;
+  toggleWrap.querySelectorAll('.condition-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.presetCondition = btn.dataset.val;
+      // If a preset is active, reload its values for the new condition
+      if (state.activePreset) {
+        const modePresets = PRESETS[mode.id];
+        const preset = modePresets && modePresets.find(p => p.id === state.activePreset);
+        if (preset) {
+          const vals = preset[state.presetCondition] || preset.new;
+          Object.entries(vals).forEach(([k, v]) => { state.params[mode.id][k] = v; });
+        }
+      }
+      renderModalPresets(mode);
+      renderModalFields(mode);
+      rerenderResults();
+      renderModalPreview();
+      updateConfigBar();
+    });
+  });
+  presetsEl.appendChild(toggleWrap);
+
+  const grid = document.createElement('div');
+  grid.className = 'presets-grid';
+  PRESETS[mode.id].forEach(preset => {
+    const card = document.createElement('button');
+    card.className = 'preset-card' + (state.activePreset === preset.id ? ' selected' : '');
+    card.innerHTML = `
+      <span class="preset-card-icon">${preset.icon}</span>
+      <span class="preset-card-label">${preset.label}</span>
+      <span class="preset-card-examples">${preset.examples}</span>
+    `;
+    card.addEventListener('click', () => {
+      state.activePreset = preset.id;
+      const condition = state.presetCondition === 'used' ? 'used' : 'new';
+      const vals = preset[condition];
+      Object.entries(vals).forEach(([k, v]) => { state.params[mode.id][k] = v; });
+      applyMatchedPresets();
+      renderModalPresets(mode);
+      renderModalFields(mode);
+      rerenderResults();
+      renderModalPreview();
+      updateConfigBar();
+    });
+    grid.appendChild(card);
+  });
+  presetsEl.appendChild(grid);
+}
+
+function renderModalFields(mode) {
+  const container = document.getElementById('modal-step2-fields');
+  container.innerHTML = '';
+
+  mode.fields.forEach(field => {
+    const val = state.params[mode.id][field.key];
+    const div = document.createElement('div');
+    div.className = 'detail-field';
+
+    const tipHTML = field.tip
+      ? `<span class="tt" data-tip="${field.tip.replace(/"/g, '&quot;')}">?</span>`
+      : '';
+
+    let inputHTML = '';
+    if (field.isCurrency) {
+      inputHTML = `
+        <div class="currency-wrap">
+          <span class="currency-prefix">$</span>
+          <input type="text" class="modal-field-input" data-key="${field.key}"
+            data-iscurrency="1" value="${formatCurrencyInput(val)}" inputmode="numeric">
+        </div>`;
+    } else if (field.isPct) {
+      inputHTML = `
+        <div class="plain-input-wrap">
+          <input type="number" class="modal-field-input" data-key="${field.key}"
+            data-ispct="1" value="${(val * 100).toFixed(0)}"
+            step="${field.step || 1}" min="${field.min || 0}" max="${field.max || 100}">
+          <span class="field-suffix">%</span>
+        </div>`;
+    } else {
+      inputHTML = `
+        <div class="plain-input-wrap">
+          <input type="number" class="modal-field-input" data-key="${field.key}"
+            value="${val}" step="${field.step || 1}"
+            min="${field.min || 0}" max="${field.max || 99999}">
+          <span class="field-suffix">${field.unit}</span>
+        </div>`;
+    }
+
+    div.innerHTML = `
+      <div class="detail-field-label">${field.label} ${tipHTML}</div>
+      <div class="detail-field-input">${inputHTML}</div>
+    `;
+    container.appendChild(div);
+  });
+
+  // Wire up field inputs — live update
+  container.querySelectorAll('input.modal-field-input').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const key = inp.dataset.key;
+      if (inp.dataset.iscurrency) {
+        const v = parseFloat(inp.value.replace(/,/g, '')) || 0;
+        state.params[mode.id][key] = v;
+      } else if (inp.dataset.ispct) {
+        const v = parseFloat(inp.value) / 100;
+        if (!isNaN(v)) state.params[mode.id][key] = v;
+      } else {
+        const v = parseFloat(inp.value);
+        if (!isNaN(v)) state.params[mode.id][key] = v;
+      }
+      rerenderResults();
+      renderModalPreview();
+    });
+    if (inp.dataset.iscurrency) {
+      inp.addEventListener('blur', () => {
+        inp.value = formatCurrencyInput(state.params[mode.id][inp.dataset.key]);
+      });
+      inp.addEventListener('focus', () => {
+        inp.value = state.params[mode.id][inp.dataset.key] || '';
+      });
+    }
+  });
+}
+
+function renderModalPreview() {
+  if (!state.selectedMode) return;
+  const r = calcMode(state.selectedMode, state.km);
+  const mode = MODES.find(m => m.id === state.selectedMode);
+
+  document.getElementById('modal-preview-mode').innerHTML =
+    `<span>${mode.icon}</span><span>${mode.name}</span>`;
+  document.getElementById('modal-preview-number').textContent = fmt(r.total);
+
+  // Breakdown
+  const parts = [];
+  if (r.op > 0)   parts.push(`Operación: ${fmt(r.op)}`);
+  if (r.depr > 0) parts.push(`Depreciación: ${fmt(r.depr)}`);
+  if (r.opp > 0)  parts.push(`Oportunidad: ${fmt(r.opp)}`);
+  document.getElementById('modal-preview-breakdown').innerHTML =
+    parts.map(t => `<div>${t}</div>`).join('');
+
+  document.getElementById('modal-preview-perkm').textContent =
+    `${fmt(r.perKm)} / km`;
+
+  // Top 4 alternatives sorted by delta
+  const alts = MODES
+    .filter(m => m.id !== state.selectedMode)
+    .map(m => ({ mode: m, delta: calcMode(m.id, state.km).total - r.total }))
+    .sort((a, b) => a.delta - b.delta)
+    .slice(0, 4);
+
+  const altsEl = document.getElementById('modal-preview-alts');
+  altsEl.innerHTML = alts.map(({ mode: m, delta }) => {
+    const saving = delta < 0;
+    const sign = saving ? '' : '+';
+    return `
+      <div class="modal-preview-alt">
+        <span class="modal-preview-alt-name">${m.icon} ${m.name}</span>
+        <span class="modal-preview-alt-delta ${saving ? 'saving' : 'spending'}">${sign}${fmt(delta)}</span>
+      </div>`;
+  }).join('');
+}
+
+function initModal() {
+  // Open button on config bar
+  document.getElementById('config-bar-edit-btn').addEventListener('click', openModal);
+
+  // Close via X button
+  document.getElementById('modal-close-btn').addEventListener('click', closeModal);
+
+  // Close via "Ver resultado" button
+  document.getElementById('modal-done-btn').addEventListener('click', closeModal);
+
+  // Close via backdrop click
+  document.getElementById('modal-backdrop').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeModal();
+  });
+
+  // Escape key
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal();
+  });
+
+  // Modal km slider
+  document.getElementById('modal-km-slider').addEventListener('input', e => {
+    state.km = parseInt(e.target.value);
+    document.getElementById('modal-km-display').textContent = fmtKm(state.km) + ' km';
+    // Also sync the main slider
+    document.getElementById('km-slider').value = state.km;
+    document.getElementById('km-display').textContent = fmtKm(state.km) + ' km';
+    rerenderResults();
+    renderModalPreview();
+    updateConfigBar();
+  });
+
+  // Advanced params
+  document.getElementById('modal-adv-gas-price').addEventListener('input', e => {
+    const v = parseFloat(e.target.value);
+    if (!isNaN(v) && v > 0) { state.gasPrice = v; rerenderResults(); renderModalPreview(); }
+  });
+  document.getElementById('modal-adv-elec-price').addEventListener('input', e => {
+    const v = parseFloat(e.target.value);
+    if (!isNaN(v) && v > 0) { state.elecPrice = v; rerenderResults(); renderModalPreview(); }
+  });
+  document.getElementById('modal-adv-cetes-slider').addEventListener('input', e => {
+    state.cetes = parseFloat(e.target.value);
+    document.getElementById('modal-adv-cetes-display').textContent = pct(state.cetes);
+    rerenderResults();
+    renderModalPreview();
+  });
+  document.getElementById('modal-adv-opp-toggle').addEventListener('change', e => {
+    state.oppOn = e.target.checked;
+    rerenderResults();
+    renderModalPreview();
+  });
+}
+
+
 function initTooltips() {
   const popup = document.createElement('div');
   popup.className = 'tt-popup';
@@ -1097,3 +1438,4 @@ initAdvancedPanel();
 initTooltips();
 initPeriodToggle();
 initKmSlider();
+initModal();
